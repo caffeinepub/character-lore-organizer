@@ -50,6 +50,8 @@ const DEFAULT_FORM: FormData = {
   value: 50,
   fame: 50,
   nameFontSize: 56,
+  title: "",
+  titleFontSize: 32,
   previewAnimation: "default",
   shortDescription: "",
   lore: "",
@@ -388,6 +390,18 @@ export default function CharacterEditorView({
             >
               {form.name}
             </p>
+            {form.title && (
+              <p
+                className="opacity-70 mt-1"
+                style={{
+                  color: form.textColor,
+                  fontSize: `${form.titleFontSize ?? 32}px`,
+                  lineHeight: 1.2,
+                }}
+              >
+                {form.title}
+              </p>
+            )}
             {form.faction && (
               <p className="text-sm mt-1 opacity-60">{form.faction}</p>
             )}
@@ -529,6 +543,25 @@ export default function CharacterEditorView({
                 step={2}
                 value={[form.nameFontSize ?? 56]}
                 onValueChange={([v]) => set("nameFontSize", v)}
+                className="mt-2"
+              />
+            </FormField>
+            <FormField label="Title">
+              <Input
+                data-ocid="editor.title.input"
+                value={form.title ?? ""}
+                onChange={(e) => set("title", e.target.value)}
+                placeholder="e.g. The Cursed Blade"
+              />
+            </FormField>
+            <FormField label={`Title Font Size: ${form.titleFontSize ?? 32}px`}>
+              <Slider
+                data-ocid="editor.titlesize.input"
+                min={16}
+                max={80}
+                step={2}
+                value={[form.titleFontSize ?? 32]}
+                onValueChange={([v]) => set("titleFontSize", v)}
                 className="mt-2"
               />
             </FormField>

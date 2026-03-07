@@ -58,6 +58,7 @@ export default function CharacterProfileView({
   const tc = character.textColor || "#ffffff";
   const fontClass = getFontClass(character.nameFont);
   const nameFontSize = character.nameFontSize ?? 56;
+  const titleFontSize = character.titleFontSize ?? 32;
 
   // Derive a subtle accent from text color
   const accentAlpha40 = `${tc}66`;
@@ -170,7 +171,7 @@ export default function CharacterProfileView({
 
               {/* Name — always centered, full width */}
               <h1
-                className={`font-black leading-tight mb-4 text-center w-full ${fontClass}`}
+                className={`font-black leading-tight mb-2 text-center w-full ${fontClass}`}
                 style={{
                   color: tc,
                   fontSize: `clamp(2rem, ${nameFontSize}px, ${nameFontSize}px)`,
@@ -179,6 +180,20 @@ export default function CharacterProfileView({
               >
                 {character.name}
               </h1>
+
+              {/* Title line */}
+              {character.title && (
+                <p
+                  className="text-center w-full mb-4 font-medium tracking-wide opacity-80"
+                  style={{
+                    color: tc,
+                    fontSize: `clamp(1rem, ${titleFontSize}px, ${titleFontSize}px)`,
+                    textShadow: "0 2px 6px rgba(0,0,0,0.6)",
+                  }}
+                >
+                  {character.title}
+                </p>
+              )}
 
               {/* Short description */}
               <p

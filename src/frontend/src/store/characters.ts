@@ -22,6 +22,8 @@ export interface Character {
   bgColor: string;
   textColor: string;
   nameFont: string;
+  title: string;
+  titleFontSize: number;
   fame: number;
   nameFontSize: number;
   previewAnimation: string;
@@ -75,6 +77,8 @@ const SAMPLE_CHARACTERS: Character[] = [
     bgColor: "#0d0d1a",
     textColor: "#c9a84c",
     nameFont: "Cinzel",
+    title: "",
+    titleFontSize: 32,
     fame: 87,
     nameFontSize: 56,
     previewAnimation: "default",
@@ -116,6 +120,8 @@ const SAMPLE_CHARACTERS: Character[] = [
     bgColor: "#1a0a0a",
     textColor: "#e8e8e8",
     nameFont: "Playfair Display",
+    title: "",
+    titleFontSize: 32,
     fame: 74,
     nameFontSize: 56,
     previewAnimation: "default",
@@ -158,6 +164,8 @@ const SAMPLE_CHARACTERS: Character[] = [
     bgColor: "#060612",
     textColor: "#9f7aea",
     nameFont: "Orbitron",
+    title: "",
+    titleFontSize: 32,
     fame: 95,
     nameFontSize: 56,
     previewAnimation: "default",
@@ -180,6 +188,8 @@ export function getCharacters(): Character[] {
       const migrated = { ...c } as Character;
       if (migrated.fame === undefined) migrated.fame = 0;
       if (migrated.nameFontSize === undefined) migrated.nameFontSize = 56;
+      if (migrated.title === undefined) migrated.title = "";
+      if (migrated.titleFontSize === undefined) migrated.titleFontSize = 32;
       if (migrated.previewAnimation === undefined)
         migrated.previewAnimation = "default";
       if (migrated.tags === undefined) migrated.tags = [];
