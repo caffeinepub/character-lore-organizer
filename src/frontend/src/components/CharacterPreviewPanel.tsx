@@ -102,6 +102,41 @@ function getAnimationProps(anim: string) {
         exit: { opacity: 0 },
         transition: { duration: 0.15, ease: "easeOut" as const },
       };
+    case "sun-rising":
+      return {
+        initial: { opacity: 0, y: 30 },
+        animate: { opacity: 1, y: 0 },
+        exit: { opacity: 0, y: -30 },
+        transition: { duration: 0.6, ease: "easeOut" as const },
+      };
+    case "moon-rising":
+      return {
+        initial: { opacity: 0 },
+        animate: { opacity: 1 },
+        exit: { opacity: 0, y: -30 },
+        transition: { duration: 0.55, ease: "easeOut" as const },
+      };
+    case "gambler":
+      return {
+        initial: { opacity: 0, y: 50 },
+        animate: { opacity: 1, y: 0 },
+        exit: { opacity: 0 },
+        transition: { duration: 0.5, ease: "easeOut" as const },
+      };
+    case "gold-coins":
+      return {
+        initial: { opacity: 0 },
+        animate: { opacity: 1 },
+        exit: { opacity: 0 },
+        transition: { duration: 0.35 },
+      };
+    case "flower":
+      return {
+        initial: { opacity: 0, scale: 0.9 },
+        animate: { opacity: 1, scale: 1 },
+        exit: { opacity: 0 },
+        transition: { duration: 0.5, ease: [0.34, 1.56, 0.64, 1] as const },
+      };
     default:
       return {
         initial: { opacity: 0, y: 60 },
@@ -472,6 +507,236 @@ function GlitchOverlay() {
   );
 }
 
+function SunRisingOverlay() {
+  const [show, setShow] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setShow(false), 1400);
+    return () => clearTimeout(t);
+  }, []);
+  if (!show) return null;
+  return (
+    <>
+      <div className="sun-rays-layer" />
+      <div className="sun-horizon-glow" />
+      <div className="sun-glow-orb" />
+    </>
+  );
+}
+
+function MoonRisingOverlay() {
+  const [show, setShow] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setShow(false), 1500);
+    return () => clearTimeout(t);
+  }, []);
+  if (!show) return null;
+
+  const stars = [
+    { top: "8%", left: "15%" },
+    { top: "12%", left: "60%" },
+    { top: "6%", left: "80%" },
+    { top: "20%", left: "35%" },
+    { top: "18%", left: "88%" },
+    { top: "30%", left: "10%" },
+    { top: "28%", left: "72%" },
+    { top: "38%", left: "50%" },
+    { top: "15%", left: "45%" },
+    { top: "25%", left: "22%" },
+  ];
+
+  return (
+    <>
+      <div className="moon-glow-ring" />
+      <div className="moon-stars-layer">
+        {stars.map((pos, i) => (
+          <div
+            // biome-ignore lint/suspicious/noArrayIndexKey: static list
+            key={i}
+            className="moon-star"
+            style={{ ...pos, animationDelay: `${i * 0.08}s` }}
+          />
+        ))}
+      </div>
+      <div className="moon-orb" />
+    </>
+  );
+}
+
+// ── D6 SVG die face ─────────────────────────────────────────────────────────
+
+function D6Svg({
+  size = 50,
+  faceValue = 6,
+}: { size?: number; faceValue?: number }) {
+  const pipPositions: Record<number, Array<[number, number]>> = {
+    1: [[25, 25]],
+    2: [
+      [14, 14],
+      [36, 36],
+    ],
+    3: [
+      [14, 14],
+      [25, 25],
+      [36, 36],
+    ],
+    4: [
+      [14, 14],
+      [36, 14],
+      [14, 36],
+      [36, 36],
+    ],
+    5: [
+      [14, 14],
+      [36, 14],
+      [25, 25],
+      [14, 36],
+      [36, 36],
+    ],
+    6: [
+      [14, 12],
+      [36, 12],
+      [14, 25],
+      [36, 25],
+      [14, 38],
+      [36, 38],
+    ],
+  };
+  const pips = pipPositions[faceValue] ?? pipPositions[6];
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 50 50"
+      fill="none"
+      role="img"
+      aria-label={`D6 die showing ${faceValue}`}
+      style={{
+        filter: "drop-shadow(0 0 8px oklch(0.75 0.18 75 / 0.7))",
+      }}
+    >
+      <rect
+        x="3"
+        y="3"
+        width="44"
+        height="44"
+        rx="8"
+        fill="oklch(0.15 0.06 260 / 0.92)"
+        stroke="oklch(0.75 0.18 75)"
+        strokeWidth="2"
+      />
+      {pips.map(([cx, cy], i) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: static pip layout
+        <circle key={i} cx={cx} cy={cy} r="4" fill="oklch(0.85 0.18 75)" />
+      ))}
+    </svg>
+  );
+}
+
+function GamblerOverlay() {
+  const [show, setShow] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setShow(false), 1400);
+    return () => clearTimeout(t);
+  }, []);
+  if (!show) return null;
+  const face1 = Math.floor(Math.random() * 6) + 1;
+  const face2 = Math.floor(Math.random() * 6) + 1;
+  return (
+    <>
+      <div className="gambler-die-1">
+        <D6Svg size={56} faceValue={face1} />
+      </div>
+      <div className="gambler-die-2">
+        <D6Svg size={56} faceValue={face2} />
+      </div>
+    </>
+  );
+}
+
+function GoldCoinsOverlay() {
+  const [show, setShow] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setShow(false), 2200);
+    return () => clearTimeout(t);
+  }, []);
+  if (!show) return null;
+
+  const coins = Array.from({ length: 16 }, (_, i) => ({
+    left: `${5 + (i * 90) / 15}%`,
+    delay: `${(i * 1.0) / 15}s`,
+    dur: `${0.9 + (i * 0.5) / 15}s`,
+  }));
+
+  return (
+    <>
+      {coins.map((c, i) => (
+        <div
+          // biome-ignore lint/suspicious/noArrayIndexKey: static list
+          key={i}
+          className="gold-coin"
+          style={{
+            left: c.left,
+            // @ts-expect-error CSS custom properties
+            "--coin-delay": c.delay,
+            "--coin-dur": c.dur,
+          }}
+        />
+      ))}
+    </>
+  );
+}
+
+function FlowerOverlay() {
+  const [show, setShow] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setShow(false), 1350);
+    return () => clearTimeout(t);
+  }, []);
+  if (!show) return null;
+  return (
+    <div className="flower-overlay">
+      <svg
+        width="120"
+        height="120"
+        viewBox="0 0 120 120"
+        fill="none"
+        role="img"
+        aria-label="Flower"
+        style={{
+          filter:
+            "drop-shadow(0 0 14px oklch(0.78 0.22 340 / 0.8)) drop-shadow(0 0 30px oklch(0.88 0.2 350 / 0.4))",
+        }}
+      >
+        {/* 6 petals arranged radially */}
+        {[0, 60, 120, 180, 240, 300].map((angle, i) => (
+          <ellipse
+            // biome-ignore lint/suspicious/noArrayIndexKey: static list
+            key={i}
+            cx={60 + Math.cos((angle * Math.PI) / 180) * 26}
+            cy={60 + Math.sin((angle * Math.PI) / 180) * 26}
+            rx="14"
+            ry="22"
+            fill="oklch(0.78 0.22 340 / 0.85)"
+            stroke="oklch(0.88 0.18 345 / 0.6)"
+            strokeWidth="1"
+            transform={`rotate(${angle}, ${60 + Math.cos((angle * Math.PI) / 180) * 26}, ${60 + Math.sin((angle * Math.PI) / 180) * 26})`}
+          />
+        ))}
+        {/* Center */}
+        <circle
+          cx="60"
+          cy="60"
+          r="13"
+          fill="oklch(0.92 0.2 85)"
+          stroke="oklch(0.82 0.18 80)"
+          strokeWidth="1.5"
+        />
+        <circle cx="60" cy="60" r="6" fill="oklch(0.75 0.14 75)" />
+      </svg>
+    </div>
+  );
+}
+
 // ── Main Component ──────────────────────────────────────────────────────────
 
 export default function CharacterPreviewPanel({
@@ -562,6 +827,13 @@ export default function CharacterPreviewPanel({
                 {anim === "door-lock" && <DoorLockOverlay key={overlayKey} />}
                 {anim === "holy" && <HolyOverlay key={overlayKey} />}
                 {anim === "glitch" && <GlitchOverlay key={overlayKey} />}
+                {anim === "sun-rising" && <SunRisingOverlay key={overlayKey} />}
+                {anim === "moon-rising" && (
+                  <MoonRisingOverlay key={overlayKey} />
+                )}
+                {anim === "gambler" && <GamblerOverlay key={overlayKey} />}
+                {anim === "gold-coins" && <GoldCoinsOverlay key={overlayKey} />}
+                {anim === "flower" && <FlowerOverlay key={overlayKey} />}
 
                 {/* ── TOP ZONE: Character name + badges ── */}
                 <div
@@ -569,7 +841,7 @@ export default function CharacterPreviewPanel({
                   style={{ background: `${character.bgColor}cc` }}
                 >
                   <motion.h2
-                    className={`font-bold leading-tight mb-2 ${getFontClass(character.nameFont)}`}
+                    className={`font-bold leading-tight ${character.title ? "mb-1" : "mb-2"} ${getFontClass(character.nameFont)}`}
                     style={{
                       color: character.textColor,
                       fontSize: `${nameSize}px`,
@@ -580,6 +852,22 @@ export default function CharacterPreviewPanel({
                   >
                     {character.name}
                   </motion.h2>
+                  {character.title && (
+                    <motion.p
+                      className="leading-snug mb-2"
+                      style={{
+                        color: character.textColor,
+                        fontSize: `${Math.min(Math.max(character.titleFontSize ?? 20, 12), 28)}px`,
+                        opacity: 0.85,
+                        wordBreak: "break-word",
+                      }}
+                      initial={{ opacity: 0, y: -6 }}
+                      animate={{ opacity: 0.85, y: 0 }}
+                      transition={{ delay: 0.22, duration: 0.3 }}
+                    >
+                      {character.title}
+                    </motion.p>
+                  )}
                   <div className="flex items-center gap-2 flex-wrap">
                     <Badge
                       variant="outline"
@@ -606,13 +894,13 @@ export default function CharacterPreviewPanel({
 
                 {/* ── MIDDLE ZONE: Character image (max space) ── */}
                 <div className="flex-1 relative overflow-hidden">
-                  {character.portraitImageUrl || character.fullBodyImageUrl ? (
+                  {character.fullBodyImageUrl || character.portraitImageUrl ? (
                     <>
                       {/* Blurred background layer — ambient color fill */}
                       <img
                         src={
-                          character.portraitImageUrl ||
-                          character.fullBodyImageUrl
+                          character.fullBodyImageUrl ||
+                          character.portraitImageUrl
                         }
                         alt=""
                         aria-hidden="true"
@@ -623,11 +911,11 @@ export default function CharacterPreviewPanel({
                           opacity: 0.6,
                         }}
                       />
-                      {/* Foreground character image */}
+                      {/* Foreground character image — full body preferred */}
                       <motion.img
                         src={
-                          character.portraitImageUrl ||
-                          character.fullBodyImageUrl
+                          character.fullBodyImageUrl ||
+                          character.portraitImageUrl
                         }
                         alt={character.name}
                         className="absolute inset-0 w-full h-full object-contain object-center"

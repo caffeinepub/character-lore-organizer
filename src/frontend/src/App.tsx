@@ -1,9 +1,13 @@
 import { Toaster } from "@/components/ui/sonner";
+import AfterDarkGalleryView from "@/views/AfterDarkGalleryView";
 import CharacterCompareView from "@/views/CharacterCompareView";
 import CharacterEditorView from "@/views/CharacterEditorView";
 import CharacterGalleryView from "@/views/CharacterGalleryView";
 import CharacterProfileView from "@/views/CharacterProfileView";
 import CharacterSelectView from "@/views/CharacterSelectView";
+import FactionProfileView from "@/views/FactionProfileView";
+import FactionSelectView from "@/views/FactionSelectView";
+import LoreView from "@/views/LoreView";
 import SearchView from "@/views/SearchView";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useState } from "react";
@@ -14,7 +18,11 @@ type View =
   | { name: "editor"; editingId?: string }
   | { name: "search" }
   | { name: "gallery"; characterId: string }
-  | { name: "compare" };
+  | { name: "compare" }
+  | { name: "after-dark"; characterId: string }
+  | { name: "lore" }
+  | { name: "factions" }
+  | { name: "faction-profile"; factionId: string };
 
 export default function App() {
   const [view, setView] = useState<View>({ name: "select" });
@@ -49,6 +57,22 @@ export default function App() {
     setView({ name: "compare" });
   }, []);
 
+  const goAfterDark = useCallback((id: string) => {
+    setView({ name: "after-dark", characterId: id });
+  }, []);
+
+  const goLore = useCallback(() => {
+    setView({ name: "lore" });
+  }, []);
+
+  const goFactions = useCallback(() => {
+    setView({ name: "factions" });
+  }, []);
+
+  const goFactionProfile = useCallback((id: string) => {
+    setView({ name: "faction-profile", factionId: id });
+  }, []);
+
   const handleSaved = useCallback(() => {
     goSelect();
   }, [goSelect]);
@@ -76,6 +100,8 @@ export default function App() {
               onSearch={goSearch}
               onCompare={goCompare}
               onViewGallery={goGallery}
+              onLore={goLore}
+              onFactions={goFactions}
             />
           </PageTransition>
         )}
@@ -116,6 +142,18 @@ export default function App() {
             <CharacterGalleryView
               characterId={view.characterId}
               onBack={goSelect}
+              onAfterDark={() => goAfterDark(view.characterId)}
+            />
+          </PageTransition>
+        )}
+
+        {view.name === "after-dark" && (
+          <PageTransition key={`after-dark-${view.characterId}`}>
+            <AfterDarkGalleryView
+              characterId={view.characterId}
+              onBack={() => {
+                if (view.name === "after-dark") goGallery(view.characterId);
+              }}
             />
           </PageTransition>
         )}
@@ -123,6 +161,32 @@ export default function App() {
         {view.name === "compare" && (
           <PageTransition key="compare">
             <CharacterCompareView onBack={goSelect} onNavigate={goProfile} />
+          </PageTransition>
+        )}
+
+        {view.name === "lore" && (
+          <PageTransition key="lore">
+            <LoreView onBack={goSelect} onNavigateToCharacter={goProfile} />
+          </PageTransition>
+        )}
+
+        {view.name === "factions" && (
+          <PageTransition key="factions">
+            <FactionSelectView
+              onBack={goSelect}
+              onViewProfile={goFactionProfile}
+            />
+          </PageTransition>
+        )}
+
+        {view.name === "faction-profile" && (
+          <PageTransition key={`faction-profile-${view.factionId}`}>
+            <FactionProfileView
+              factionId={view.factionId}
+              onBack={goFactions}
+              onNavigateToCharacter={goProfile}
+              onEdit={goFactionProfile}
+            />
           </PageTransition>
         )}
       </AnimatePresence>

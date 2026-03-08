@@ -16,6 +16,7 @@ export interface Character {
   tags: string[];
   relationships: CharacterRelationship[];
   galleryImages: string[];
+  afterDarkImages: string[];
   portraitImageUrl: string;
   fullBodyImageUrl: string;
   musicUrl: string;
@@ -27,6 +28,9 @@ export interface Character {
   fame: number;
   nameFontSize: number;
   previewAnimation: string;
+  pinned: boolean;
+  portraitBorderColor: string;
+  signature: string;
   createdAt: number;
   updatedAt: number;
 }
@@ -71,6 +75,7 @@ const SAMPLE_CHARACTERS: Character[] = [
       },
     ],
     galleryImages: [],
+    afterDarkImages: [],
     portraitImageUrl: "/assets/generated/aria-portrait.dim_400x400.jpg",
     fullBodyImageUrl: "/assets/generated/aria-fullbody.dim_600x900.jpg",
     musicUrl: "",
@@ -82,6 +87,9 @@ const SAMPLE_CHARACTERS: Character[] = [
     fame: 87,
     nameFontSize: 56,
     previewAnimation: "default",
+    pinned: false,
+    portraitBorderColor: "",
+    signature: "",
     createdAt: Date.now() - 1000 * 60 * 60 * 24 * 10,
     updatedAt: Date.now() - 1000 * 60 * 60 * 2,
   },
@@ -114,6 +122,7 @@ const SAMPLE_CHARACTERS: Character[] = [
       },
     ],
     galleryImages: [],
+    afterDarkImages: [],
     portraitImageUrl: "/assets/generated/roland-portrait.dim_400x400.jpg",
     fullBodyImageUrl: "/assets/generated/roland-fullbody.dim_600x900.jpg",
     musicUrl: "",
@@ -125,6 +134,9 @@ const SAMPLE_CHARACTERS: Character[] = [
     fame: 74,
     nameFontSize: 56,
     previewAnimation: "default",
+    pinned: false,
+    portraitBorderColor: "",
+    signature: "",
     createdAt: Date.now() - 1000 * 60 * 60 * 24 * 7,
     updatedAt: Date.now() - 1000 * 60 * 30,
   },
@@ -158,6 +170,7 @@ const SAMPLE_CHARACTERS: Character[] = [
       },
     ],
     galleryImages: [],
+    afterDarkImages: [],
     portraitImageUrl: "/assets/generated/nyx-portrait.dim_400x400.jpg",
     fullBodyImageUrl: "/assets/generated/nyx-fullbody.dim_600x900.jpg",
     musicUrl: "",
@@ -169,6 +182,9 @@ const SAMPLE_CHARACTERS: Character[] = [
     fame: 95,
     nameFontSize: 56,
     previewAnimation: "default",
+    pinned: false,
+    portraitBorderColor: "",
+    signature: "",
     createdAt: Date.now() - 1000 * 60 * 60 * 24 * 3,
     updatedAt: Date.now() - 1000 * 60 * 10,
   },
@@ -195,6 +211,11 @@ export function getCharacters(): Character[] {
       if (migrated.tags === undefined) migrated.tags = [];
       if (migrated.relationships === undefined) migrated.relationships = [];
       if (migrated.galleryImages === undefined) migrated.galleryImages = [];
+      if (migrated.afterDarkImages === undefined) migrated.afterDarkImages = [];
+      if (migrated.pinned === undefined) migrated.pinned = false;
+      if (migrated.portraitBorderColor === undefined)
+        migrated.portraitBorderColor = "";
+      if (migrated.signature === undefined) migrated.signature = "";
       return migrated;
     });
   } catch {
@@ -269,12 +290,12 @@ export function searchCharacters(
   return results;
 }
 
-export function sortCharacters(
+function sortGroup(
   chars: Character[],
   by: SortField,
   direction: "asc" | "desc",
 ): Character[] {
-  const sorted = [...chars].sort((a, b) => {
+  return [...chars].sort((a, b) => {
     let cmp = 0;
     switch (by) {
       case "name":
@@ -298,7 +319,19 @@ export function sortCharacters(
     }
     return direction === "asc" ? cmp : -cmp;
   });
-  return sorted;
+}
+
+export function sortCharacters(
+  chars: Character[],
+  by: SortField,
+  direction: "asc" | "desc",
+): Character[] {
+  const pinned = chars.filter((c) => c.pinned);
+  const unpinned = chars.filter((c) => !c.pinned);
+  return [
+    ...sortGroup(pinned, by, direction),
+    ...sortGroup(unpinned, by, direction),
+  ];
 }
 
 export const FONT_OPTIONS = [

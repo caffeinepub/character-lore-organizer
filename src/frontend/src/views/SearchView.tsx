@@ -3,9 +3,37 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { searchCharacters } from "@/store/characters";
 import type { Character } from "@/store/characters";
-import { ArrowLeft, Search, Shield, User } from "lucide-react";
+import { ArrowLeft, Clock, Search, Shield, User, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
+const HISTORY_KEY = "searchHistory";
+const MAX_HISTORY = 3;
+
+function getSearchHistory(): string[] {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.slice(0, MAX_HISTORY) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveSearchHistory(history: string[]): void {
+  localStorage.setItem(
+    HISTORY_KEY,
+    JSON.stringify(history.slice(0, MAX_HISTORY)),
+  );
+}
+
+function addToHistory(term: string): void {
+  if (!term.trim()) return;
+  const existing = getSearchHistory();
+  const deduped = [term, ...existing.filter((h) => h !== term)];
+  saveSearchHistory(deduped.slice(0, MAX_HISTORY));
+}
 
 interface SearchViewProps {
   onBack: () => void;
@@ -17,8 +45,33 @@ export default function SearchView({
   onSelectCharacter,
 }: SearchViewProps) {
   const [query, setQuery] = useState("");
+  const [history, setHistory] = useState<string[]>(() => getSearchHistory());
+  const [inputFocused, setInputFocused] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const results = searchCharacters(query);
+
+  // Save to history when query is non-empty and user pauses (300ms debounce)
+  useEffect(() => {
+    if (!query.trim()) return;
+    const t = setTimeout(() => {
+      addToHistory(query.trim());
+      setHistory(getSearchHistory());
+    }, 800);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  const applyHistory = (term: string) => {
+    setQuery(term);
+    inputRef.current?.focus();
+  };
+
+  const clearHistory = () => {
+    localStorage.removeItem(HISTORY_KEY);
+    setHistory([]);
+  };
+
+  const showHistory = history.length > 0 && (inputFocused || !query.trim());
 
   const highlight = (text: string, q: string) => {
     if (!q.trim()) return text;
@@ -62,15 +115,59 @@ export default function SearchView({
             className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
           />
           <Input
+            ref={inputRef}
             data-ocid="search.search_input"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onFocus={() => setInputFocused(true)}
+            onBlur={() => setTimeout(() => setInputFocused(false), 150)}
             placeholder="Search characters, lore, backstory, traits..."
             className="pl-9 text-sm bg-card border-border"
             autoFocus
           />
         </div>
       </header>
+
+      {/* Search history chips */}
+      <AnimatePresence>
+        {showHistory && (
+          <motion.div
+            key="history-bar"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="border-b border-border bg-card/40 px-6 py-2 overflow-hidden"
+          >
+            <div className="max-w-2xl mx-auto flex items-center gap-2 flex-wrap">
+              <Clock size={12} className="text-muted-foreground shrink-0" />
+              <span className="text-xs text-muted-foreground uppercase tracking-wider shrink-0">
+                Recent:
+              </span>
+              {history.map((term, i) => (
+                <button
+                  key={term}
+                  type="button"
+                  data-ocid={`search.history.item.${i + 1}`}
+                  onClick={() => applyHistory(term)}
+                  className="px-2.5 py-1 rounded-full text-xs border border-gold/30 bg-gold/10 text-gold hover:bg-gold/20 transition-colors"
+                >
+                  {term}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={clearHistory}
+                className="ml-auto text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs"
+                title="Clear history"
+              >
+                <X size={11} />
+                Clear
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Results */}
       <main className="flex-1 max-w-3xl mx-auto w-full px-6 py-8">

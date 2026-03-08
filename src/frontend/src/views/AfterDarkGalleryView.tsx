@@ -3,27 +3,29 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { getCharacters } from "@/store/characters";
 import { ArrowLeft, Image as ImageIcon, Lock, X } from "lucide-react";
 import { motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-interface CharacterGalleryViewProps {
+interface AfterDarkGalleryViewProps {
   characterId: string;
   onBack: () => void;
-  onAfterDark: () => void;
 }
 
-export default function CharacterGalleryView({
+export default function AfterDarkGalleryView({
   characterId,
   onBack,
-  onAfterDark,
-}: CharacterGalleryViewProps) {
+}: AfterDarkGalleryViewProps) {
   const [character, setCharacter] = useState<{
     name: string;
     bgColor: string;
     textColor: string;
-    galleryImages: string[];
+    afterDarkImages: string[];
     nameFont: string;
   } | null>(null);
+  const [pin, setPin] = useState("");
+  const [unlocked, setUnlocked] = useState(false);
+  const [pinError, setPinError] = useState(false);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const chars = getCharacters();
@@ -33,11 +35,28 @@ export default function CharacterGalleryView({
         name: found.name,
         bgColor: found.bgColor,
         textColor: found.textColor,
-        galleryImages: found.galleryImages ?? [],
+        afterDarkImages: found.afterDarkImages ?? [],
         nameFont: found.nameFont,
       });
     }
   }, [characterId]);
+
+  useEffect(() => {
+    if (!unlocked && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [unlocked]);
+
+  const handlePinSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (pin === "yugi") {
+      setUnlocked(true);
+      setPinError(false);
+    } else {
+      setPinError(true);
+      setPin("");
+    }
+  };
 
   if (!character) {
     return (
@@ -50,6 +69,110 @@ export default function CharacterGalleryView({
   const bg = character.bgColor || "#0d0d1a";
   const tc = character.textColor || "#ffffff";
 
+  if (!unlocked) {
+    return (
+      <div
+        className="min-h-screen flex flex-col items-center justify-center relative"
+        style={{ backgroundColor: bg, color: tc }}
+      >
+        {/* Atmospheric overlay */}
+        <div
+          className="fixed inset-0 pointer-events-none"
+          style={{
+            background: `radial-gradient(ellipse at 50% 60%, ${tc}06 0%, transparent 65%)`,
+          }}
+        />
+
+        <motion.div
+          data-ocid="after-dark.pin.dialog"
+          className="relative z-10 flex flex-col items-center gap-6 max-w-sm w-full mx-auto px-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          {/* Lock icon */}
+          <div
+            className="w-16 h-16 rounded-full flex items-center justify-center border"
+            style={{ borderColor: `${tc}30`, background: `${tc}08` }}
+          >
+            <Lock size={28} style={{ color: `${tc}80` }} />
+          </div>
+
+          <div className="text-center">
+            <h2 className="text-xl font-bold mb-1" style={{ color: tc }}>
+              {character.name} — After Dark
+            </h2>
+            <p
+              className="text-xs uppercase tracking-widest"
+              style={{ color: `${tc}60` }}
+            >
+              Enter PIN to continue
+            </p>
+          </div>
+
+          <form
+            onSubmit={handlePinSubmit}
+            className="w-full flex flex-col gap-3"
+          >
+            <input
+              ref={inputRef}
+              data-ocid="after-dark.pin.input"
+              type="password"
+              value={pin}
+              onChange={(e) => {
+                setPin(e.target.value);
+                setPinError(false);
+              }}
+              placeholder="PIN"
+              className="w-full text-center px-4 py-3 rounded-lg border bg-transparent outline-none text-base tracking-widest focus:ring-1"
+              style={{
+                borderColor: pinError ? "oklch(0.58 0.22 25)" : `${tc}30`,
+                color: tc,
+                backgroundColor: `${tc}08`,
+                caretColor: tc,
+              }}
+              autoComplete="off"
+            />
+            {pinError && (
+              <p
+                data-ocid="after-dark.pin.error_state"
+                className="text-center text-xs"
+                style={{ color: "oklch(0.65 0.22 25)" }}
+              >
+                Incorrect PIN
+              </p>
+            )}
+            <Button
+              data-ocid="after-dark.pin.submit_button"
+              type="submit"
+              className="w-full uppercase tracking-widest text-xs font-bold"
+              style={{
+                background: `${tc}20`,
+                color: tc,
+                borderColor: `${tc}40`,
+              }}
+              variant="outline"
+            >
+              Unlock
+            </Button>
+          </form>
+
+          <Button
+            data-ocid="after-dark.back.button"
+            variant="ghost"
+            size="sm"
+            onClick={onBack}
+            className="gap-2 text-xs uppercase tracking-wider hover:bg-white/10"
+            style={{ color: `${tc}50` }}
+          >
+            <ArrowLeft size={14} />
+            Back to Gallery
+          </Button>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <div
       className="min-h-screen relative"
@@ -59,7 +182,7 @@ export default function CharacterGalleryView({
       <div
         className="fixed inset-0 pointer-events-none"
         style={{
-          background: `radial-gradient(ellipse at 60% 0%, ${tc}08 0%, transparent 55%)`,
+          background: `radial-gradient(ellipse at 60% 0%, ${tc}06 0%, transparent 55%)`,
         }}
       />
 
@@ -69,7 +192,7 @@ export default function CharacterGalleryView({
         style={{ borderColor: `${tc}20`, background: `${bg}cc` }}
       >
         <Button
-          data-ocid="gallery.back.button"
+          data-ocid="after-dark.back.button"
           variant="ghost"
           size="sm"
           onClick={onBack}
@@ -81,20 +204,34 @@ export default function CharacterGalleryView({
         </Button>
 
         <div className="flex items-center gap-2">
-          <div className="w-1 h-4 rounded-full" style={{ background: tc }} />
+          <Lock size={12} style={{ color: `${tc}60` }} />
           <span className="text-xs uppercase tracking-[0.25em] font-medium opacity-60">
-            {character.name} — Gallery
+            {character.name} — After Dark
           </span>
         </div>
 
         <div className="w-16" />
       </header>
 
+      {/* Private disclaimer */}
+      <div className="max-w-5xl mx-auto px-6 pt-6">
+        <p
+          className="text-xs text-center uppercase tracking-widest py-2 px-4 rounded border inline-block w-full"
+          style={{
+            borderColor: `${tc}20`,
+            color: `${tc}40`,
+            background: `${tc}05`,
+          }}
+        >
+          Private gallery — restricted content
+        </p>
+      </div>
+
       {/* Gallery grid */}
-      <main className="max-w-5xl mx-auto px-6 py-10">
-        {character.galleryImages.length === 0 ? (
+      <main className="max-w-5xl mx-auto px-6 py-6">
+        {character.afterDarkImages.length === 0 ? (
           <motion.div
-            data-ocid="gallery.empty_state"
+            data-ocid="after-dark.gallery.empty_state"
             className="flex flex-col items-center justify-center py-24 gap-4 text-center"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -109,20 +246,20 @@ export default function CharacterGalleryView({
               className="text-sm uppercase tracking-widest font-medium"
               style={{ color: `${tc}60` }}
             >
-              No gallery images yet
+              No After Dark images yet
             </p>
             <p className="text-xs max-w-xs" style={{ color: `${tc}40` }}>
-              Open the character editor and add images in the Gallery Images
+              Open the character editor and add images in the After Dark Images
               section.
             </p>
           </motion.div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {character.galleryImages.map((src, i) => (
+            {character.afterDarkImages.map((src, i) => (
               <motion.button
                 // biome-ignore lint/suspicious/noArrayIndexKey: ordered gallery
                 key={i}
-                data-ocid={`gallery.image.item.${i + 1}`}
+                data-ocid={`after-dark.gallery.image.item.${i + 1}`}
                 type="button"
                 onClick={() => setLightboxSrc(src)}
                 className="relative aspect-square overflow-hidden rounded-lg border group"
@@ -135,7 +272,7 @@ export default function CharacterGalleryView({
               >
                 <img
                   src={src}
-                  alt={`${character.name} gallery ${i + 1}`}
+                  alt={`${character.name} after dark ${i + 1}`}
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
                 <div
@@ -149,24 +286,6 @@ export default function CharacterGalleryView({
           </div>
         )}
       </main>
-
-      {/* After Dark section */}
-      <div className="mt-10 flex justify-center px-6">
-        <Button
-          data-ocid="gallery.after_dark.button"
-          variant="outline"
-          onClick={onAfterDark}
-          className="gap-2 uppercase tracking-widest text-xs font-bold border px-8 py-6 hover:bg-white/5 transition-all duration-200"
-          style={{
-            borderColor: `${tc}25`,
-            color: `${tc}70`,
-            background: `${tc}05`,
-          }}
-        >
-          <Lock size={14} />
-          {character.name} — After Dark
-        </Button>
-      </div>
 
       {/* Footer */}
       <footer
@@ -195,7 +314,7 @@ export default function CharacterGalleryView({
             {lightboxSrc && (
               <img
                 src={lightboxSrc}
-                alt="Gallery full size"
+                alt="After Dark full size"
                 className="w-full h-auto max-h-[80vh] object-contain rounded"
               />
             )}

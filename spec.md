@@ -1,43 +1,61 @@
 # Character Lore Organizer
 
 ## Current State
-- localStorage-based character store with full CRUD
-- Character model: id, name, faction, value, fame, shortDescription, lore, backstory, traits, funFacts, portraitImageUrl, fullBodyImageUrl, musicUrl, bgColor, textColor, nameFont, nameFontSize, previewAnimation, createdAt, updatedAt
-- Views: CharacterSelectView, CharacterProfileView, CharacterEditorView, SearchView
-- CharacterPreviewPanel shows name/image/music controls with 16 animations
-- CharacterProfileView shows collapsible lore/backstory/funFacts sections
-- No tags, gallery images, relationships, comparison view, or card export
+
+- Full character roster with portrait grid sidebar, preview panel, and profile views
+- Character editor with CRUD, images, music, colors, fonts, animations
+- 18 entry animations for the preview panel
+- Random character button using a D20 SVG die
+- Factions, Lore, Gallery, After Dark (PIN-protected), Compare, Search views
+- Characters store with: name, faction, value, fame, title, lore, backstory, traits, funFacts, tags, relationships, galleryImages, afterDarkImages, portraits, music, bgColor, textColor, nameFont, nameFontSize, titleFontSize, previewAnimation
+- Factions store with: name, symbolImageUrl, shortDescription, lore, exMembers
+- SortBar with: faction, name, value, fame, createdAt, updatedAt
+- Search with text across all character fields
 
 ## Requested Changes (Diff)
 
 ### Add
-1. **Character tags/keywords** — new `tags: string[]` field on Character; rendered as a styled chip cloud on the profile below traits; tag input in editor (same pattern as traits)
-2. **Relationship map** — new `relationships: { description: string; linkedCharacterId: string }[]` field on Character. Freeform description text per relationship entry (e.g. "Arch-nemesis of Aria"). The `linkedCharacterId` is selected from existing characters via a dropdown in the editor. On the profile, each relationship entry renders its description with any character name detected in the text auto-linked to that character's profile. The linked character's name in the description text is made clickable/highlighted. Also render a small portrait thumbnail next to each entry.
-3. **Gallery** — new `galleryImages: string[]` field (base64 array) on Character. New "Gallery" button in CharacterPreviewPanel bottom zone (below "View Full Profile"). Opens a new `CharacterGalleryView` showing a masonry/grid mood board of all gallery images with captions. In the editor, a new "Gallery Images" section supports multi-file upload at once (input multiple). Images can be removed individually.
-4. **Character comparison view** — new "Compare" button somewhere in CharacterSelectView header/toolbar. Opens a `CharacterCompareView` where user can pick two characters from dropdowns; displays them side by side showing: portrait, name, faction, value, fame, traits, tags.
-5. **Character card export** — "Export Card" button on CharacterProfileView header area. Opens a modal showing a rendered card: portrait fills card, character name at top in their custom font and color, one-sentence description at bottom. Uses html2canvas or a canvas approach to download as PNG.
-6. **Auto lore cross-linking** — utility function `linkifyLore(text, characters, onNavigate)` that scans text for any character name, wraps it in a styled clickable span. Applied to lore, backstory, and relationship description text in CharacterProfileView.
-7. **Name centering fix** — `h1` character name on CharacterProfileView must be `text-center w-full` unconditionally (not `text-center md:text-left`).
-8. **Character migration** — `getCharacters()` migrates old records missing `tags`, `relationships`, `galleryImages` fields with empty defaults.
+
+1. **Six-sided die (D6) SVG** to replace the current D20 SVG in CharacterSelectView — show a cube face with 1–6 dot pips, glowing gold, animates rolling then reveals character name
+2. **Gambler animation** — new entry animation: two six-sided dice roll up from the bottom, tumble/spin, land, then vanish before character image fades in (CSS keyframe overlay)
+3. **Gold Coins animation** — new entry animation: coins rain down from the top of the preview panel before character image fades in (CSS keyframe overlay)
+4. **Flower animation** — new entry animation: a flower SVG spins gently on screen then fades away before character image reveals (CSS keyframe overlay)
+5. **Search history** — last 3 searches saved to localStorage, shown as quick-click chips below the search input in SearchView
+6. **Pin/Favorite characters** — star icon on each portrait card in the sidebar; pinned characters always float to the top of the roster above other sorted characters; `pinned: boolean` field added to Character type with migration
+7. **Portrait border color** — per-character color picker in the editor (hex + color input); `portraitBorderColor: string` added to Character type; applied as border color on the portrait card in the sidebar
+8. **Faction accent color** — `accentColor: string` field added to Faction type; color picker in FactionEditorModal; faction cards in FactionSelectView get a subtle tint/glow using their accent color
+9. **Signature field** — `signature: string` field added to Character type; textarea in editor under Profile Appearance; displayed prominently on CharacterProfileView with distinct italic styling, quoted format, labeled "Signature"
 
 ### Modify
-- `Character` interface: add `tags: string[]`, `relationships: { description: string; linkedCharacterId: string }[]`, `galleryImages: string[]`
-- `CharacterProfileView`: fix name centering; add Tags section; add Relationships section with cross-link rendering; wire "Export Card" button
-- `CharacterEditorView`: add Tags section (same chip input pattern as traits); add Relationships section (freeform text + character picker dropdown); add Gallery Images multi-upload section
-- `CharacterPreviewPanel`: add "Gallery" button in bottom zone (between/after "View Full Profile" and music)
-- `App.tsx`: add `gallery` and `compare` view routes; wire navigation callbacks
-- `characters.ts`: add new fields to interface + migration + sample data updates
+
+- **Character store migration** — add `pinned`, `portraitBorderColor`, `signature` fields with safe defaults in `getCharacters()` migration block
+- **Faction store migration** — add `accentColor` field with default `#c9a84c` in `getFactions()` migration block
+- **CharacterSelectView** — replace D20Svg with D6Svg component; pin indicator (⭐ or star icon) overlaid on portrait card; sorting logic: pinned characters always sort to top before applying current sort; portrait card border uses `char.portraitBorderColor` when set
+- **CharacterEditorView** — add Portrait Border Color field (color picker + hex input) in Profile Appearance section; add Signature textarea in Lore section (or Profile Appearance); add `pinned` toggle/checkbox
+- **CharacterPreviewPanel** — add Gambler, Gold Coins, and Flower animation cases to `getAnimationProps` and overlay rendering
+- **CharacterProfileView** — add Signature section displayed near the top of the profile (below name/title), styled as a large italic quote
+- **FactionSelectView/FactionEditorModal** — add accent color field; faction cards tinted with accent color
+- **SearchView** — add search history (last 3) stored in localStorage, displayed as chip buttons above/below search input
+- **ANIMATION_OPTIONS** in CharacterEditorView — add gambler, gold-coins, flower entries
+- **index.css** — add CSS keyframe animations for gambler dice, gold coins raining, and flower spin/fade
 
 ### Remove
-- Nothing removed
+
+- D20Svg component (replaced by D6Svg)
+- `Dice5` lucide icon import (replaced with custom D6Svg or kept if no conflict)
 
 ## Implementation Plan
-1. Update `Character` interface and migration in `characters.ts` to include `tags`, `relationships`, `galleryImages`
-2. Update sample characters with empty arrays for new fields
-3. Add `linkifyLore` utility that tokenizes text and returns React nodes with character name spans as clickable links
-4. Update `CharacterProfileView`: fix name centering, add Tags collapsible section, add Relationships collapsible section (with portrait thumbnails + linkified descriptions), add Export Card modal using html2canvas
-5. Update `CharacterEditorView`: add Tags chip input, add Relationships section (freeform description + character select dropdown + add/remove), add Gallery multi-image upload section
-6. Update `CharacterPreviewPanel`: add "Gallery" button in bottom zone
-7. Create `CharacterGalleryView` — grid/masonry of gallery images for one character, back button
-8. Create `CharacterCompareView` — two character selectors, side-by-side comparison cards
-9. Update `App.tsx` — add gallery and compare view types + navigation handlers
+
+1. Update `characters.ts` store: add `pinned`, `portraitBorderColor`, `signature` fields + migration
+2. Update `factions.ts` store: add `accentColor` field + migration
+3. Add D6Svg component in CharacterSelectView, replace D20Svg usage and label
+4. Add new CSS animations in index.css: gambler-dice, gold-coins-rain, flower-spin
+5. Add GamblerOverlay, GoldCoinsOverlay, FlowerOverlay components in CharacterPreviewPanel
+6. Add gambler/gold-coins/flower cases to getAnimationProps and overlay render block
+7. Update CharacterSelectView: pin star on portrait cards, pinned-first sorting, portraitBorderColor border
+8. Update CharacterEditorView: Portrait Border Color picker, Signature field, pinned toggle, new animation options
+9. Update CharacterProfileView: Signature display section
+10. Update FactionEditorModal: accentColor picker
+11. Update FactionSelectView: faction card accent color tinting
+12. Update SearchView: search history localStorage (last 3), chip display
+13. Validate and fix any TypeScript errors

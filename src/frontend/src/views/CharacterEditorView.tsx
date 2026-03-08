@@ -1,15 +1,13 @@
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -30,7 +28,14 @@ import {
   getFontClass,
   updateCharacter,
 } from "@/store/characters";
-import { AlertTriangle, ArrowLeft, Loader2, Plus, X } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Loader2,
+  Plus,
+  Trash2,
+  X,
+} from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -61,12 +66,16 @@ const DEFAULT_FORM: FormData = {
   tags: [],
   relationships: [],
   galleryImages: [],
+  afterDarkImages: [],
   portraitImageUrl: "",
   fullBodyImageUrl: "",
   musicUrl: "",
   bgColor: "#0d0d1a",
   textColor: "#c9a84c",
   nameFont: "Cinzel",
+  pinned: false,
+  portraitBorderColor: "",
+  signature: "",
 };
 
 const ANIMATION_OPTIONS = [
@@ -86,6 +95,11 @@ const ANIMATION_OPTIONS = [
   { value: "door-lock", label: "🚪 Door & Lock" },
   { value: "holy", label: "🕊️ Holy Wings" },
   { value: "glitch", label: "💾 Glitch" },
+  { value: "sun-rising", label: "☀️ Sun Rising" },
+  { value: "moon-rising", label: "🌙 Moon Rising" },
+  { value: "gambler", label: "🎲 Gambler Dice" },
+  { value: "gold-coins", label: "🪙 Gold Coins Rain" },
+  { value: "flower", label: "🌸 Flower Spin" },
 ];
 
 function fileToBase64(file: File): Promise<string> {
@@ -112,11 +126,14 @@ export default function CharacterEditorView({
   const [portraitPreview, setPortraitPreview] = useState("");
   const [fullBodyPreview, setFullBodyPreview] = useState("");
   const [musicName, setMusicName] = useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteNameInput, setDeleteNameInput] = useState("");
 
   const portraitRef = useRef<HTMLInputElement>(null);
   const fullBodyRef = useRef<HTMLInputElement>(null);
   const musicRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
+  const afterDarkRef = useRef<HTMLInputElement>(null);
 
   const isEditing = !!editingId;
 
@@ -257,6 +274,23 @@ export default function CharacterEditorView({
     );
   };
 
+  const handleAfterDarkUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+    const results = await Promise.all(files.map(fileToBase64));
+    set("afterDarkImages", [...(form.afterDarkImages ?? []), ...results]);
+    e.target.value = "";
+  };
+
+  const removeAfterDarkImage = (idx: number) => {
+    set(
+      "afterDarkImages",
+      (form.afterDarkImages ?? []).filter((_, i) => i !== idx),
+    );
+  };
+
   const handleSave = async () => {
     if (!form.name.trim()) {
       toast.error("Character name is required");
@@ -281,9 +315,10 @@ export default function CharacterEditorView({
   };
 
   const handleDelete = () => {
-    if (editingId) {
+    if (editingId && deleteNameInput === form.name) {
       deleteCharacter(editingId);
       toast.success("Character deleted");
+      setDeleteDialogOpen(false);
       onDeleted();
     }
   };
@@ -314,46 +349,88 @@ export default function CharacterEditorView({
 
         <div className="flex items-center gap-2">
           {isEditing && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  data-ocid="editor.delete.delete_button"
-                  className="gap-1.5 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 uppercase tracking-wider"
-                >
-                  <X size={14} />
-                  Delete
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle className="flex items-center gap-2">
-                    <AlertTriangle size={18} className="text-destructive" />
-                    Delete Character
-                  </AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Are you sure you want to delete{" "}
-                    <strong className="text-foreground">
-                      {form.name || "this character"}
-                    </strong>
-                    ? This cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel data-ocid="editor.delete.cancel_button">
-                    Cancel
-                  </AlertDialogCancel>
-                  <AlertDialogAction
-                    data-ocid="editor.delete.confirm_button"
-                    onClick={handleDelete}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  >
-                    Delete
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                data-ocid="editor.delete.delete_button"
+                onClick={() => {
+                  setDeleteNameInput("");
+                  setDeleteDialogOpen(true);
+                }}
+                className="gap-1.5 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 uppercase tracking-wider"
+              >
+                <Trash2 size={14} />
+                Delete
+              </Button>
+
+              <Dialog
+                open={deleteDialogOpen}
+                onOpenChange={(v) => {
+                  setDeleteDialogOpen(v);
+                  if (!v) setDeleteNameInput("");
+                }}
+              >
+                <DialogContent data-ocid="editor.delete.dialog">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <AlertTriangle size={18} className="text-destructive" />
+                      Delete {form.name || "Character"}?
+                    </DialogTitle>
+                    <DialogDescription>
+                      This cannot be undone. Type the character's exact name to
+                      confirm deletion.
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <div className="space-y-2 py-2">
+                    <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                      Type "{form.name}" to confirm
+                    </Label>
+                    <Input
+                      data-ocid="editor.delete.confirm.input"
+                      value={deleteNameInput}
+                      onChange={(e) => setDeleteNameInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (
+                          e.key === "Enter" &&
+                          deleteNameInput === form.name
+                        ) {
+                          handleDelete();
+                        }
+                      }}
+                      placeholder={form.name}
+                      className="border-destructive/30 focus-visible:ring-destructive/30"
+                    />
+                  </div>
+
+                  <DialogFooter>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      data-ocid="editor.delete.cancel_button"
+                      onClick={() => {
+                        setDeleteDialogOpen(false);
+                        setDeleteNameInput("");
+                      }}
+                      className="text-xs uppercase tracking-wider"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      data-ocid="editor.delete.confirm_button"
+                      onClick={handleDelete}
+                      disabled={deleteNameInput !== form.name}
+                      className="gap-1.5 text-xs bg-destructive text-destructive-foreground hover:bg-destructive/90 uppercase tracking-wider disabled:opacity-30"
+                    >
+                      <Trash2 size={13} />
+                      Delete Forever
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </>
           )}
 
           <Button
@@ -565,6 +642,48 @@ export default function CharacterEditorView({
                 className="mt-2"
               />
             </FormField>
+            <FormField label="Portrait Border Color">
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={form.portraitBorderColor || "#c9a84c"}
+                  onChange={(e) => set("portraitBorderColor", e.target.value)}
+                  className="w-10 h-9 rounded cursor-pointer bg-transparent border border-border"
+                />
+                <Input
+                  data-ocid="editor.portraitborder.input"
+                  value={form.portraitBorderColor}
+                  onChange={(e) => set("portraitBorderColor", e.target.value)}
+                  placeholder="#c9a84c (leave blank for default)"
+                  className="font-mono text-sm"
+                />
+                {form.portraitBorderColor && (
+                  <button
+                    type="button"
+                    onClick={() => set("portraitBorderColor", "")}
+                    className="text-muted-foreground hover:text-foreground shrink-0"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+            </FormField>
+            <FormField label="Pin to Roster Top">
+              <div className="flex items-center gap-2 mt-1">
+                <Checkbox
+                  data-ocid="editor.pinned.checkbox"
+                  id="editor-pinned"
+                  checked={form.pinned ?? false}
+                  onCheckedChange={(checked) => set("pinned", checked === true)}
+                />
+                <label
+                  htmlFor="editor-pinned"
+                  className="text-xs text-muted-foreground cursor-pointer"
+                >
+                  Pin this character to the top of the roster
+                </label>
+              </div>
+            </FormField>
           </div>
         </Section>
 
@@ -716,6 +835,18 @@ export default function CharacterEditorView({
             onChange={(e) => set("backstory", e.target.value)}
             placeholder="Personal history, origin story, and background..."
             rows={5}
+            className="resize-y"
+          />
+        </Section>
+
+        {/* Signature */}
+        <Section title="Signature (Character Quote)">
+          <Textarea
+            data-ocid="editor.signature.textarea"
+            value={form.signature ?? ""}
+            onChange={(e) => set("signature", e.target.value)}
+            placeholder="A defining quote or motto..."
+            rows={3}
             className="resize-y"
           />
         </Section>
@@ -967,6 +1098,56 @@ export default function CharacterEditorView({
                     <button
                       type="button"
                       onClick={() => removeGalleryImage(i)}
+                      className="absolute top-1 right-1 bg-background/80 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </Section>
+
+        {/* After Dark Images */}
+        <Section title="After Dark Images (PIN Protected)">
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Private gallery accessible only with the PIN. Upload mature or
+              restricted artwork here.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              data-ocid="editor.afterdark.upload_button"
+              onClick={() => afterDarkRef.current?.click()}
+              className="gap-1.5 text-xs uppercase tracking-wider border-dashed"
+            >
+              <Plus size={13} />
+              Add After Dark Images
+            </Button>
+            <input
+              ref={afterDarkRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleAfterDarkUpload}
+              className="hidden"
+            />
+            {(form.afterDarkImages ?? []).length > 0 && (
+              <div className="grid grid-cols-3 gap-2">
+                {(form.afterDarkImages ?? []).map((img, i) => (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: ordered list
+                  <div key={i} className="relative aspect-square group">
+                    <img
+                      src={img}
+                      alt={`After Dark ${i + 1}`}
+                      className="w-full h-full object-cover rounded-md border border-border"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeAfterDarkImage(i)}
                       className="absolute top-1 right-1 bg-background/80 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <X size={12} />

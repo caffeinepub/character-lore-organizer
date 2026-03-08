@@ -195,6 +195,27 @@ export default function CharacterProfileView({
                 </p>
               )}
 
+              {/* Signature */}
+              {character.signature && (
+                <div
+                  className="mb-5 pl-4 border-l-2 max-w-lg mx-auto"
+                  style={{ borderLeftColor: tc }}
+                >
+                  <p
+                    className="italic text-lg leading-relaxed"
+                    style={{ color: tc, opacity: 0.85 }}
+                  >
+                    &ldquo;{character.signature}&rdquo;
+                  </p>
+                  <p
+                    className="text-xs uppercase tracking-wider mt-1"
+                    style={{ color: tc, opacity: 0.5 }}
+                  >
+                    — Signature
+                  </p>
+                </div>
+              )}
+
               {/* Short description */}
               <p
                 className="text-lg leading-relaxed max-w-lg mb-6 text-center mx-auto"
@@ -481,6 +502,15 @@ export default function CharacterProfileView({
             </div>
           </ProfileSection>
         )}
+
+        {/* Also Appears In */}
+        <AlsoAppearsIn
+          character={character}
+          allCharacters={allCharacters}
+          textColor={tc}
+          accentAlpha40={accentAlpha40}
+          onNavigate={onNavigate}
+        />
       </div>
 
       {/* Footer */}
@@ -737,6 +767,120 @@ function ExportCardDialog({
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// ── Also Appears In ─────────────────────────────────────────────────────────
+
+function AlsoAppearsIn({
+  character,
+  allCharacters,
+  textColor,
+  accentAlpha40,
+  onNavigate,
+}: {
+  character: Character;
+  allCharacters: Character[];
+  textColor: string;
+  accentAlpha40: string;
+  onNavigate: (id: string) => void;
+}) {
+  const tc = textColor;
+  const name = character.name.toLowerCase();
+
+  const mentions = allCharacters.filter((c) => {
+    if (c.id === character.id) return false;
+    const fields = [
+      c.lore,
+      c.backstory,
+      c.shortDescription,
+      ...(c.relationships ?? []).map((r) => r.description),
+    ];
+    return fields.some((f) => f?.toLowerCase().includes(name));
+  });
+
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.75, duration: 0.5 }}
+    >
+      {/* Section header */}
+      <div className="flex items-center gap-3 mb-4">
+        <div
+          className="w-1 h-6 rounded-full shrink-0"
+          style={{ background: textColor }}
+        />
+        <h2
+          className="text-xs font-bold uppercase tracking-[0.3em]"
+          style={{ color: `${tc}aa` }}
+        >
+          Also Appears In
+        </h2>
+        <div className="flex-1 h-px" style={{ background: accentAlpha40 }} />
+      </div>
+
+      {mentions.length === 0 ? (
+        <p
+          data-ocid="profile.also_appears_in.empty_state"
+          className="text-sm italic"
+          style={{ color: `${tc}55` }}
+        >
+          No other characters mention {character.name} yet.
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {mentions.map((char, i) => (
+            <motion.button
+              key={char.id}
+              type="button"
+              data-ocid={`profile.also_appears_in.item.${i + 1}`}
+              onClick={() => onNavigate(char.id)}
+              className="w-full flex items-center gap-3 p-3 rounded-lg border text-left transition-all hover:scale-[1.01]"
+              style={{
+                borderColor: `${tc}18`,
+                background: `${tc}08`,
+              }}
+              whileHover={{ borderColor: `${tc}35` }}
+            >
+              {/* Portrait thumbnail */}
+              <div
+                className="w-10 h-10 rounded-full overflow-hidden border-2 shrink-0"
+                style={{ borderColor: `${tc}30` }}
+              >
+                {char.portraitImageUrl ? (
+                  <img
+                    src={char.portraitImageUrl}
+                    alt={char.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div
+                    className="w-full h-full flex items-center justify-center"
+                    style={{ background: `${tc}15` }}
+                  >
+                    <User size={16} style={{ color: `${tc}60` }} />
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p
+                  className="font-semibold text-sm truncate"
+                  style={{ color: tc }}
+                >
+                  {char.name}
+                </p>
+                {char.faction && (
+                  <p className="text-xs truncate" style={{ color: `${tc}60` }}>
+                    {char.faction}
+                  </p>
+                )}
+              </div>
+            </motion.button>
+          ))}
+        </div>
+      )}
+    </motion.section>
   );
 }
 
