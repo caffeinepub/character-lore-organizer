@@ -137,6 +137,13 @@ function getAnimationProps(anim: string) {
         exit: { opacity: 0 },
         transition: { duration: 0.5, ease: [0.34, 1.56, 0.64, 1] as const },
       };
+    case "hearts":
+      return {
+        initial: { opacity: 0, y: 30 },
+        animate: { opacity: 1, y: 0 },
+        exit: { opacity: 0, y: -20 },
+        transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] as const },
+      };
     default:
       return {
         initial: { opacity: 0, y: 60 },
@@ -686,6 +693,58 @@ function GoldCoinsOverlay() {
   );
 }
 
+function HeartsOverlay() {
+  const [show, setShow] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setShow(false), 2000);
+    return () => clearTimeout(t);
+  }, []);
+  if (!show) return null;
+
+  const hearts = [
+    { left: "28%", scale: 1.1, delay: 0, dur: 1.7, sway: 1.1, rot: "-12deg" },
+    {
+      left: "50%",
+      scale: 0.85,
+      delay: 0.22,
+      dur: 1.55,
+      sway: 0.95,
+      rot: "8deg",
+    },
+    {
+      left: "68%",
+      scale: 1.0,
+      delay: 0.42,
+      dur: 1.65,
+      sway: 1.25,
+      rot: "-18deg",
+    },
+  ];
+
+  return (
+    <>
+      {hearts.map((h, i) => (
+        <div
+          // biome-ignore lint/suspicious/noArrayIndexKey: static list
+          key={i}
+          className="heart-particle"
+          style={{
+            left: h.left,
+            // @ts-expect-error CSS custom properties
+            "--heart-scale": h.scale,
+            "--heart-delay": `${h.delay}s`,
+            "--heart-dur": `${h.dur}s`,
+            "--heart-sway": `${h.sway}s`,
+            "--heart-rot": h.rot,
+          }}
+        >
+          ❤️
+        </div>
+      ))}
+    </>
+  );
+}
+
 function FlowerOverlay() {
   const [show, setShow] = useState(true);
   useEffect(() => {
@@ -834,6 +893,7 @@ export default function CharacterPreviewPanel({
                 {anim === "gambler" && <GamblerOverlay key={overlayKey} />}
                 {anim === "gold-coins" && <GoldCoinsOverlay key={overlayKey} />}
                 {anim === "flower" && <FlowerOverlay key={overlayKey} />}
+                {anim === "hearts" && <HeartsOverlay key={overlayKey} />}
 
                 {/* ── TOP ZONE: Character name + badges ── */}
                 <div

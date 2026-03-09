@@ -1,5 +1,8 @@
 import { Toaster } from "@/components/ui/sonner";
 import AfterDarkGalleryView from "@/views/AfterDarkGalleryView";
+import ArtifactEditorView from "@/views/ArtifactEditorView";
+import ArtifactProfileView from "@/views/ArtifactProfileView";
+import ArtifactSelectView from "@/views/ArtifactSelectView";
 import CharacterCompareView from "@/views/CharacterCompareView";
 import CharacterEditorView from "@/views/CharacterEditorView";
 import CharacterGalleryView from "@/views/CharacterGalleryView";
@@ -22,7 +25,10 @@ type View =
   | { name: "after-dark"; characterId: string }
   | { name: "lore" }
   | { name: "factions" }
-  | { name: "faction-profile"; factionId: string };
+  | { name: "faction-profile"; factionId: string }
+  | { name: "artifacts" }
+  | { name: "artifact-profile"; artifactId: string }
+  | { name: "artifact-editor"; editingId?: string };
 
 export default function App() {
   const [view, setView] = useState<View>({ name: "select" });
@@ -73,6 +79,18 @@ export default function App() {
     setView({ name: "faction-profile", factionId: id });
   }, []);
 
+  const goArtifacts = useCallback(() => {
+    setView({ name: "artifacts" });
+  }, []);
+
+  const goArtifactProfile = useCallback((id: string) => {
+    setView({ name: "artifact-profile", artifactId: id });
+  }, []);
+
+  const goArtifactEditor = useCallback((id?: string) => {
+    setView({ name: "artifact-editor", editingId: id });
+  }, []);
+
   const handleSaved = useCallback(() => {
     goSelect();
   }, [goSelect]);
@@ -102,6 +120,7 @@ export default function App() {
               onViewGallery={goGallery}
               onLore={goLore}
               onFactions={goFactions}
+              onArtifacts={goArtifacts}
             />
           </PageTransition>
         )}
@@ -186,6 +205,38 @@ export default function App() {
               onBack={goFactions}
               onNavigateToCharacter={goProfile}
               onEdit={goFactionProfile}
+            />
+          </PageTransition>
+        )}
+
+        {view.name === "artifacts" && (
+          <PageTransition key="artifacts">
+            <ArtifactSelectView
+              onBack={goSelect}
+              onViewProfile={goArtifactProfile}
+              onEdit={goArtifactEditor}
+            />
+          </PageTransition>
+        )}
+
+        {view.name === "artifact-profile" && (
+          <PageTransition key={`artifact-profile-${view.artifactId}`}>
+            <ArtifactProfileView
+              artifactId={view.artifactId}
+              onBack={goArtifacts}
+              onEdit={goArtifactEditor}
+              onNavigateToCharacter={goProfile}
+            />
+          </PageTransition>
+        )}
+
+        {view.name === "artifact-editor" && (
+          <PageTransition key={`artifact-editor-${view.editingId ?? "new"}`}>
+            <ArtifactEditorView
+              editingId={view.editingId}
+              onBack={goArtifacts}
+              onSaved={goArtifacts}
+              onDeleted={goArtifacts}
             />
           </PageTransition>
         )}

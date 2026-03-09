@@ -1,3 +1,4 @@
+import StatHexChart from "@/components/StatHexChart";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -76,6 +77,13 @@ const DEFAULT_FORM: FormData = {
   pinned: false,
   portraitBorderColor: "",
   signature: "",
+  strength: 0,
+  defense: 0,
+  magic: 0,
+  power: 0,
+  scale: 0,
+  influence: 0,
+  statHexColor: "",
 };
 
 const ANIMATION_OPTIONS = [
@@ -100,6 +108,7 @@ const ANIMATION_OPTIONS = [
   { value: "gambler", label: "🎲 Gambler Dice" },
   { value: "gold-coins", label: "🪙 Gold Coins Rain" },
   { value: "flower", label: "🌸 Flower Spin" },
+  { value: "hearts", label: "💕 Floating Hearts" },
 ];
 
 function fileToBase64(file: File): Promise<string> {
@@ -684,6 +693,128 @@ export default function CharacterEditorView({
                 </label>
               </div>
             </FormField>
+          </div>
+        </Section>
+
+        {/* Combat Stats */}
+        <Section title="Combat Stats">
+          <div className="space-y-4">
+            {/* Stat chart color */}
+            <FormField label="Stat Chart Color">
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={form.statHexColor || form.textColor || "#c9a84c"}
+                  onChange={(e) => set("statHexColor", e.target.value)}
+                  className="w-10 h-9 rounded cursor-pointer bg-transparent border border-border"
+                />
+                <Input
+                  data-ocid="editor.stathex.color.input"
+                  value={form.statHexColor}
+                  onChange={(e) => set("statHexColor", e.target.value)}
+                  placeholder="#c9a84c (leave blank to use text color)"
+                  className="font-mono text-sm"
+                />
+                {form.statHexColor && (
+                  <button
+                    type="button"
+                    onClick={() => set("statHexColor", "")}
+                    className="text-muted-foreground hover:text-foreground shrink-0"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+            </FormField>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField label={`Strength: ${form.strength ?? 0}`}>
+                <Slider
+                  data-ocid="editor.stat.strength.input"
+                  min={-100}
+                  max={100}
+                  step={1}
+                  value={[form.strength ?? 0]}
+                  onValueChange={([v]) => set("strength", v)}
+                  className="mt-2"
+                />
+              </FormField>
+              <FormField label={`Defense: ${form.defense ?? 0}`}>
+                <Slider
+                  data-ocid="editor.stat.defense.input"
+                  min={-100}
+                  max={100}
+                  step={1}
+                  value={[form.defense ?? 0]}
+                  onValueChange={([v]) => set("defense", v)}
+                  className="mt-2"
+                />
+              </FormField>
+              <FormField label={`Magic: ${form.magic ?? 0}`}>
+                <Slider
+                  data-ocid="editor.stat.magic.input"
+                  min={-100}
+                  max={100}
+                  step={1}
+                  value={[form.magic ?? 0]}
+                  onValueChange={([v]) => set("magic", v)}
+                  className="mt-2"
+                />
+              </FormField>
+              <FormField label={`Power (Combat): ${form.power ?? 0}`}>
+                <Slider
+                  data-ocid="editor.stat.power.input"
+                  min={-100}
+                  max={100}
+                  step={1}
+                  value={[form.power ?? 0]}
+                  onValueChange={([v]) => set("power", v)}
+                  className="mt-2"
+                />
+              </FormField>
+              <FormField label={`Scale: ${form.scale ?? 0}`}>
+                <Slider
+                  data-ocid="editor.stat.scale.input"
+                  min={-100}
+                  max={100}
+                  step={1}
+                  value={[form.scale ?? 0]}
+                  onValueChange={([v]) => set("scale", v)}
+                  className="mt-2"
+                />
+              </FormField>
+              <FormField label={`Fame (Stat): ${form.influence ?? 0}`}>
+                <Slider
+                  data-ocid="editor.stat.influence.input"
+                  min={-100}
+                  max={100}
+                  step={1}
+                  value={[form.influence ?? 0]}
+                  onValueChange={([v]) => set("influence", v)}
+                  className="mt-2"
+                />
+              </FormField>
+            </div>
+
+            {/* Live hex chart preview */}
+            <div
+              className="flex justify-center mt-4 p-4 rounded-lg border border-border/50"
+              style={{ background: form.bgColor || "#0d0d1a" }}
+            >
+              <StatHexChart
+                stats={{
+                  strength: form.strength ?? 0,
+                  defense: form.defense ?? 0,
+                  magic: form.magic ?? 0,
+                  power: form.power ?? 0,
+                  scale: form.scale ?? 0,
+                  influence: form.influence ?? 0,
+                }}
+                color={form.statHexColor || form.textColor || "#c9a84c"}
+                size={220}
+                showLabels={true}
+              />
+            </div>
           </div>
         </Section>
 

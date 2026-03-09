@@ -832,3 +832,29 @@
   z-index: 20;
   pointer-events: none;
 }
+
+/* Floating hearts animation */
+@keyframes heartFloat {
+  0%   { transform: translateY(0) scale(var(--heart-scale, 1)) rotate(var(--heart-rot, -15deg)); opacity: 0; }
+  10%  { opacity: 1; }
+  80%  { opacity: 0.85; }
+  100% { transform: translateY(-110%) scale(calc(var(--heart-scale, 1) * 0.7)) rotate(var(--heart-rot, -15deg)); opacity: 0; }
+}
+@keyframes heartSway {
+  0%   { margin-left: 0; }
+  25%  { margin-left: 10px; }
+  75%  { margin-left: -10px; }
+  100% { margin-left: 0; }
+}
+.heart-particle {
+  position: absolute;
+  bottom: 8%;
+  font-size: 40px;
+  line-height: 1;
+  pointer-events: none;
+  z-index: 22;
+  animation:
+    heartFloat var(--heart-dur, 1.6s) ease-out var(--heart-delay, 0s) forwards,
+    heartSway var(--heart-sway, 1.2s) ease-in-out var(--heart-delay, 0s) infinite alternate;
+  filter: drop-shadow(0 0 10px oklch(0.72 0.28 0 / 0.7)) drop-shadow(0 0 22px oklch(0.82 0.22 0 / 0.4));
+}

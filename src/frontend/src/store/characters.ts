@@ -31,6 +31,14 @@ export interface Character {
   pinned: boolean;
   portraitBorderColor: string;
   signature: string;
+  // Combat stats (-100 to +100)
+  strength: number;
+  defense: number;
+  magic: number;
+  power: number;
+  scale: number;
+  influence: number;
+  statHexColor: string;
   createdAt: number;
   updatedAt: number;
 }
@@ -90,6 +98,13 @@ const SAMPLE_CHARACTERS: Character[] = [
     pinned: false,
     portraitBorderColor: "",
     signature: "",
+    strength: 60,
+    defense: 40,
+    magic: 95,
+    power: 70,
+    scale: 30,
+    influence: 55,
+    statHexColor: "#c9a84c",
     createdAt: Date.now() - 1000 * 60 * 60 * 24 * 10,
     updatedAt: Date.now() - 1000 * 60 * 60 * 2,
   },
@@ -137,6 +152,13 @@ const SAMPLE_CHARACTERS: Character[] = [
     pinned: false,
     portraitBorderColor: "",
     signature: "",
+    strength: 100,
+    defense: 90,
+    magic: 15,
+    power: 80,
+    scale: 65,
+    influence: 70,
+    statHexColor: "#e8e8e8",
     createdAt: Date.now() - 1000 * 60 * 60 * 24 * 7,
     updatedAt: Date.now() - 1000 * 60 * 30,
   },
@@ -185,6 +207,13 @@ const SAMPLE_CHARACTERS: Character[] = [
     pinned: false,
     portraitBorderColor: "",
     signature: "",
+    strength: 35,
+    defense: 55,
+    magic: 100,
+    power: 85,
+    scale: -20,
+    influence: 80,
+    statHexColor: "#9f7aea",
     createdAt: Date.now() - 1000 * 60 * 60 * 24 * 3,
     updatedAt: Date.now() - 1000 * 60 * 10,
   },
@@ -216,6 +245,13 @@ export function getCharacters(): Character[] {
       if (migrated.portraitBorderColor === undefined)
         migrated.portraitBorderColor = "";
       if (migrated.signature === undefined) migrated.signature = "";
+      if (migrated.strength === undefined) migrated.strength = 0;
+      if (migrated.defense === undefined) migrated.defense = 0;
+      if (migrated.magic === undefined) migrated.magic = 0;
+      if (migrated.power === undefined) migrated.power = 0;
+      if (migrated.scale === undefined) migrated.scale = 0;
+      if (migrated.influence === undefined) migrated.influence = 0;
+      if (migrated.statHexColor === undefined) migrated.statHexColor = "";
       return migrated;
     });
   } catch {

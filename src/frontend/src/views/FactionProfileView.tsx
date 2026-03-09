@@ -32,7 +32,6 @@ export default function FactionProfileView({
   const [members, setMembers] = useState<Character[]>([]);
   const [editorOpen, setEditorOpen] = useState(false);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: factionId is a prop-level stable string
   useEffect(() => {
     const factions = getFactions();
     const found = factions.find((f) => f.id === factionId);

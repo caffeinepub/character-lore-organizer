@@ -11,6 +11,7 @@ import {
   Search,
   Shield,
   Star,
+  Sword,
   User,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
@@ -24,6 +25,7 @@ interface CharacterSelectViewProps {
   onViewGallery: (id: string) => void;
   onLore: () => void;
   onFactions: () => void;
+  onArtifacts: () => void;
   refreshKey: number;
 }
 
@@ -35,6 +37,7 @@ export default function CharacterSelectView({
   onViewGallery,
   onLore,
   onFactions,
+  onArtifacts,
   refreshKey,
 }: CharacterSelectViewProps) {
   const [characters, setCharacters] = useState<Character[]>([]);
@@ -122,6 +125,16 @@ export default function CharacterSelectView({
           >
             <Shield size={14} />
             <span className="hidden sm:inline">Factions</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            data-ocid="roster.artifacts.button"
+            onClick={onArtifacts}
+            className="gap-1.5 text-xs text-muted-foreground hover:text-foreground uppercase tracking-wider"
+          >
+            <Sword size={14} />
+            <span className="hidden sm:inline">Artifacts</span>
           </Button>
           <Button
             variant="ghost"

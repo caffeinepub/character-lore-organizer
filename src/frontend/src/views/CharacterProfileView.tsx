@@ -1,4 +1,5 @@
 import AudioPlayer from "@/components/AudioPlayer";
+import StatHexChart from "@/components/StatHexChart";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -379,6 +380,30 @@ export default function CharacterProfileView({
             </ul>
           </ProfileSection>
         )}
+
+        {/* Combat Stats */}
+        <ProfileSection
+          title="Combat Stats"
+          textColor={tc}
+          accentAlpha40={accentAlpha40}
+          delay={0.45}
+        >
+          <div className="flex justify-center py-2">
+            <StatHexChart
+              stats={{
+                strength: character.strength ?? 0,
+                defense: character.defense ?? 0,
+                magic: character.magic ?? 0,
+                power: character.power ?? 0,
+                scale: character.scale ?? 0,
+                influence: character.influence ?? 0,
+              }}
+              color={character.statHexColor || tc || "#c9a84c"}
+              size={280}
+              showLabels={true}
+            />
+          </div>
+        </ProfileSection>
 
         {/* Tags */}
         {(character.tags ?? []).length > 0 && (

@@ -24,7 +24,6 @@ export default function FactionSelectView({
     setFactions(getFactions());
   };
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: initial load only
   useEffect(() => {
     setFactions(getFactions());
   }, []);
