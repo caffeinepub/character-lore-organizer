@@ -1,3 +1,5 @@
+import { idbGet, idbSet, migrateFromLocalStorage } from "./idb-store";
+
 export interface CharacterRelationship {
   description: string;
   linkedCharacterId: string;
@@ -23,6 +25,7 @@ export interface Character {
   bgColor: string;
   textColor: string;
   nameFont: string;
+  titleFont: string;
   title: string;
   titleFontSize: number;
   fame: number;
@@ -51,7 +54,8 @@ export type SortField =
   | "createdAt"
   | "updatedAt";
 
-const STORAGE_KEY = "characters";
+const IDB_STORE = "characters" as const;
+const LS_KEY = "characters";
 
 const SAMPLE_CHARACTERS: Character[] = [
   {
@@ -90,6 +94,7 @@ const SAMPLE_CHARACTERS: Character[] = [
     bgColor: "#0d0d1a",
     textColor: "#c9a84c",
     nameFont: "Cinzel",
+    titleFont: "Cinzel",
     title: "",
     titleFontSize: 32,
     fame: 87,
@@ -144,6 +149,7 @@ const SAMPLE_CHARACTERS: Character[] = [
     bgColor: "#1a0a0a",
     textColor: "#e8e8e8",
     nameFont: "Playfair Display",
+    titleFont: "Playfair Display",
     title: "",
     titleFontSize: 32,
     fame: 74,
@@ -199,6 +205,7 @@ const SAMPLE_CHARACTERS: Character[] = [
     bgColor: "#060612",
     textColor: "#9f7aea",
     nameFont: "Orbitron",
+    titleFont: "Orbitron",
     title: "",
     titleFontSize: 32,
     fame: 95,
@@ -219,48 +226,85 @@ const SAMPLE_CHARACTERS: Character[] = [
   },
 ];
 
-export function getCharacters(): Character[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      saveCharacters(SAMPLE_CHARACTERS);
-      return SAMPLE_CHARACTERS;
+// In-memory cache — populated on init
+let _cache: Character[] | null = null;
+let _initialized = false;
+let _initPromise: Promise<void> | null = null;
+
+/** Initialize the store: migrate from localStorage if needed, then load from IndexedDB. */
+export async function initCharacterStore(): Promise<void> {
+  if (_initialized) return;
+  if (_initPromise) return _initPromise;
+
+  _initPromise = (async () => {
+    // Try migration from localStorage first
+    const migrated = await migrateFromLocalStorage(LS_KEY, IDB_STORE);
+    if (migrated && Array.isArray(migrated)) {
+      _cache = (migrated as Character[]).map(migrateCharacter);
+      _initialized = true;
+      return;
     }
-    const parsed = JSON.parse(raw) as Character[];
-    if (!Array.isArray(parsed)) return SAMPLE_CHARACTERS;
-    // Migrate old characters that may be missing new fields
-    return parsed.map((c) => {
-      const migrated = { ...c } as Character;
-      if (migrated.fame === undefined) migrated.fame = 0;
-      if (migrated.nameFontSize === undefined) migrated.nameFontSize = 56;
-      if (migrated.title === undefined) migrated.title = "";
-      if (migrated.titleFontSize === undefined) migrated.titleFontSize = 32;
-      if (migrated.previewAnimation === undefined)
-        migrated.previewAnimation = "default";
-      if (migrated.tags === undefined) migrated.tags = [];
-      if (migrated.relationships === undefined) migrated.relationships = [];
-      if (migrated.galleryImages === undefined) migrated.galleryImages = [];
-      if (migrated.afterDarkImages === undefined) migrated.afterDarkImages = [];
-      if (migrated.pinned === undefined) migrated.pinned = false;
-      if (migrated.portraitBorderColor === undefined)
-        migrated.portraitBorderColor = "";
-      if (migrated.signature === undefined) migrated.signature = "";
-      if (migrated.strength === undefined) migrated.strength = 0;
-      if (migrated.defense === undefined) migrated.defense = 0;
-      if (migrated.magic === undefined) migrated.magic = 0;
-      if (migrated.power === undefined) migrated.power = 0;
-      if (migrated.scale === undefined) migrated.scale = 0;
-      if (migrated.influence === undefined) migrated.influence = 0;
-      if (migrated.statHexColor === undefined) migrated.statHexColor = "";
-      return migrated;
-    });
-  } catch {
-    return SAMPLE_CHARACTERS;
-  }
+
+    // Load from IndexedDB
+    const stored = await idbGet<Character[]>(IDB_STORE);
+    if (stored && Array.isArray(stored) && stored.length > 0) {
+      _cache = stored.map(migrateCharacter);
+    } else {
+      _cache = SAMPLE_CHARACTERS;
+      await idbSet(IDB_STORE, _cache);
+    }
+    _initialized = true;
+  })();
+
+  return _initPromise;
+}
+
+function migrateCharacter(c: Character): Character {
+  const migrated = { ...c } as Character;
+  if (migrated.fame === undefined) migrated.fame = 0;
+  if (migrated.nameFontSize === undefined) migrated.nameFontSize = 56;
+  if (migrated.title === undefined) migrated.title = "";
+  if (migrated.titleFontSize === undefined) migrated.titleFontSize = 32;
+  if (migrated.previewAnimation === undefined)
+    migrated.previewAnimation = "default";
+  if (migrated.tags === undefined) migrated.tags = [];
+  if (migrated.relationships === undefined) migrated.relationships = [];
+  if (migrated.galleryImages === undefined) migrated.galleryImages = [];
+  if (migrated.afterDarkImages === undefined) migrated.afterDarkImages = [];
+  if (migrated.pinned === undefined) migrated.pinned = false;
+  if (migrated.portraitBorderColor === undefined)
+    migrated.portraitBorderColor = "";
+  if (migrated.signature === undefined) migrated.signature = "";
+  if (migrated.strength === undefined) migrated.strength = 0;
+  if (migrated.defense === undefined) migrated.defense = 0;
+  if (migrated.magic === undefined) migrated.magic = 0;
+  if (migrated.power === undefined) migrated.power = 0;
+  if (migrated.scale === undefined) migrated.scale = 0;
+  if (migrated.influence === undefined) migrated.influence = 0;
+  if (migrated.statHexColor === undefined) migrated.statHexColor = "";
+  if (migrated.titleFont === undefined)
+    migrated.titleFont = migrated.nameFont || "Cinzel";
+  return migrated;
+}
+
+function getCache(): Character[] {
+  return _cache ?? SAMPLE_CHARACTERS;
+}
+
+function persistAsync(chars: Character[]): void {
+  // Fire-and-forget async write
+  idbSet(IDB_STORE, chars).catch(() => {
+    // Silently ignore — in-memory still valid
+  });
+}
+
+export function getCharacters(): Character[] {
+  return getCache();
 }
 
 export function saveCharacters(chars: Character[]): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(chars));
+  _cache = chars;
+  persistAsync(chars);
 }
 
 export function createCharacter(

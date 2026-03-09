@@ -1,3 +1,5 @@
+import { idbGet, idbSet, migrateFromLocalStorage } from "./idb-store";
+
 export interface Faction {
   id: string;
   name: string;
@@ -10,7 +12,8 @@ export interface Faction {
   updatedAt: number;
 }
 
-const STORAGE_KEY = "factions";
+const IDB_STORE = "factions" as const;
+const LS_KEY = "factions";
 
 const SAMPLE_FACTIONS: Faction[] = [
   {
@@ -51,28 +54,57 @@ const SAMPLE_FACTIONS: Faction[] = [
   },
 ];
 
-export function getFactions(): Faction[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      saveFactions(SAMPLE_FACTIONS);
-      return SAMPLE_FACTIONS;
+let _cache: Faction[] | null = null;
+let _initialized = false;
+let _initPromise: Promise<void> | null = null;
+
+export async function initFactionStore(): Promise<void> {
+  if (_initialized) return;
+  if (_initPromise) return _initPromise;
+
+  _initPromise = (async () => {
+    const migrated = await migrateFromLocalStorage(LS_KEY, IDB_STORE);
+    if (migrated && Array.isArray(migrated)) {
+      _cache = (migrated as Faction[]).map(migrateFaction);
+      _initialized = true;
+      return;
     }
-    const parsed = JSON.parse(raw) as Faction[];
-    if (!Array.isArray(parsed)) return SAMPLE_FACTIONS;
-    return parsed.map((f) => {
-      const migrated = { ...f };
-      migrated.exMembers = migrated.exMembers ?? [];
-      if (!migrated.accentColor) migrated.accentColor = "#c9a84c";
-      return migrated as Faction;
-    });
-  } catch {
-    return SAMPLE_FACTIONS;
-  }
+
+    const stored = await idbGet<Faction[]>(IDB_STORE);
+    if (stored && Array.isArray(stored) && stored.length > 0) {
+      _cache = stored.map(migrateFaction);
+    } else {
+      _cache = SAMPLE_FACTIONS;
+      await idbSet(IDB_STORE, _cache);
+    }
+    _initialized = true;
+  })();
+
+  return _initPromise;
+}
+
+function migrateFaction(f: Faction): Faction {
+  const migrated = { ...f };
+  migrated.exMembers = migrated.exMembers ?? [];
+  if (!migrated.accentColor) migrated.accentColor = "#c9a84c";
+  return migrated as Faction;
+}
+
+function getCache(): Faction[] {
+  return _cache ?? SAMPLE_FACTIONS;
+}
+
+function persistAsync(factions: Faction[]): void {
+  idbSet(IDB_STORE, factions).catch(() => {});
+}
+
+export function getFactions(): Faction[] {
+  return getCache();
 }
 
 export function saveFactions(factions: Faction[]): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(factions));
+  _cache = factions;
+  persistAsync(factions);
 }
 
 export function createFaction(

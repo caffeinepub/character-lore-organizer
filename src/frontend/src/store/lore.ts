@@ -1,3 +1,5 @@
+import { idbGet, idbSet, migrateFromLocalStorage } from "./idb-store";
+
 export interface LoreEntry {
   id: string;
   title: string;
@@ -6,7 +8,8 @@ export interface LoreEntry {
   updatedAt: number;
 }
 
-const STORAGE_KEY = "lore-entries";
+const IDB_STORE = "lore-entries" as const;
+const LS_KEY = "lore-entries";
 
 const SAMPLE_LORE: LoreEntry[] = [
   {
@@ -25,23 +28,50 @@ const SAMPLE_LORE: LoreEntry[] = [
   },
 ];
 
-export function getLoreEntries(): LoreEntry[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      saveLoreEntries(SAMPLE_LORE);
-      return SAMPLE_LORE;
+let _cache: LoreEntry[] | null = null;
+let _initialized = false;
+let _initPromise: Promise<void> | null = null;
+
+export async function initLoreStore(): Promise<void> {
+  if (_initialized) return;
+  if (_initPromise) return _initPromise;
+
+  _initPromise = (async () => {
+    const migrated = await migrateFromLocalStorage(LS_KEY, IDB_STORE);
+    if (migrated && Array.isArray(migrated)) {
+      _cache = migrated as LoreEntry[];
+      _initialized = true;
+      return;
     }
-    const parsed = JSON.parse(raw) as LoreEntry[];
-    if (!Array.isArray(parsed)) return SAMPLE_LORE;
-    return parsed;
-  } catch {
-    return SAMPLE_LORE;
-  }
+
+    const stored = await idbGet<LoreEntry[]>(IDB_STORE);
+    if (stored && Array.isArray(stored) && stored.length > 0) {
+      _cache = stored;
+    } else {
+      _cache = SAMPLE_LORE;
+      await idbSet(IDB_STORE, _cache);
+    }
+    _initialized = true;
+  })();
+
+  return _initPromise;
+}
+
+function getCache(): LoreEntry[] {
+  return _cache ?? SAMPLE_LORE;
+}
+
+function persistAsync(entries: LoreEntry[]): void {
+  idbSet(IDB_STORE, entries).catch(() => {});
+}
+
+export function getLoreEntries(): LoreEntry[] {
+  return getCache();
 }
 
 export function saveLoreEntries(entries: LoreEntry[]): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+  _cache = entries;
+  persistAsync(entries);
 }
 
 export function createLoreEntry(

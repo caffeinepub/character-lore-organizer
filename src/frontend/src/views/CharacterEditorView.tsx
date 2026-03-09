@@ -74,6 +74,7 @@ const DEFAULT_FORM: FormData = {
   bgColor: "#0d0d1a",
   textColor: "#c9a84c",
   nameFont: "Cinzel",
+  titleFont: "Cinzel",
   pinned: false,
   portraitBorderColor: "",
   signature: "",
@@ -316,8 +317,12 @@ export default function CharacterEditorView({
         toast.success(`${form.name} created`);
       }
       onSaved();
-    } catch (_err) {
-      toast.error("Failed to save character");
+    } catch (err) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : "Failed to save character. Please try again.";
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
@@ -478,7 +483,7 @@ export default function CharacterEditorView({
             </p>
             {form.title && (
               <p
-                className="opacity-70 mt-1"
+                className={`opacity-70 mt-1 ${getFontClass(form.titleFont ?? "Cinzel")}`}
                 style={{
                   color: form.textColor,
                   fontSize: `${form.titleFontSize ?? 32}px`,
@@ -597,7 +602,7 @@ export default function CharacterEditorView({
                         className={f.className}
                         style={{ fontSize: "1.05em" }}
                       >
-                        {f.label}
+                        {form.name || f.label}
                       </span>
                     </SelectItem>
                   ))}
@@ -650,6 +655,28 @@ export default function CharacterEditorView({
                 onValueChange={([v]) => set("titleFontSize", v)}
                 className="mt-2"
               />
+            </FormField>
+            <FormField label="Title Font">
+              <Select
+                value={form.titleFont ?? "Cinzel"}
+                onValueChange={(v) => set("titleFont", v)}
+              >
+                <SelectTrigger data-ocid="editor.titlefont.select">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {FONT_OPTIONS.map((f) => (
+                    <SelectItem key={f.value} value={f.value}>
+                      <span
+                        className={f.className}
+                        style={{ fontSize: "1.05em" }}
+                      >
+                        {form.title || form.name || f.label}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </FormField>
             <FormField label="Portrait Border Color">
               <div className="flex items-center gap-2">

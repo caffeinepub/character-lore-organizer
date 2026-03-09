@@ -1,3 +1,5 @@
+import { idbGet, idbSet, migrateFromLocalStorage } from "./idb-store";
+
 export type ArtifactRarity = "Common" | "Rare" | "Legendary" | "Mythic";
 
 export interface Artifact {
@@ -12,7 +14,8 @@ export interface Artifact {
   updatedAt: number;
 }
 
-const STORAGE_KEY = "artifacts";
+const IDB_STORE = "artifacts" as const;
+const LS_KEY = "artifacts";
 
 const SAMPLE_ARTIFACTS: Artifact[] = [
   {
@@ -53,23 +56,50 @@ const SAMPLE_ARTIFACTS: Artifact[] = [
   },
 ];
 
-export function getArtifacts(): Artifact[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      saveArtifacts(SAMPLE_ARTIFACTS);
-      return SAMPLE_ARTIFACTS;
+let _cache: Artifact[] | null = null;
+let _initialized = false;
+let _initPromise: Promise<void> | null = null;
+
+export async function initArtifactStore(): Promise<void> {
+  if (_initialized) return;
+  if (_initPromise) return _initPromise;
+
+  _initPromise = (async () => {
+    const migrated = await migrateFromLocalStorage(LS_KEY, IDB_STORE);
+    if (migrated && Array.isArray(migrated)) {
+      _cache = migrated as Artifact[];
+      _initialized = true;
+      return;
     }
-    const parsed = JSON.parse(raw) as Artifact[];
-    if (!Array.isArray(parsed)) return SAMPLE_ARTIFACTS;
-    return parsed;
-  } catch {
-    return SAMPLE_ARTIFACTS;
-  }
+
+    const stored = await idbGet<Artifact[]>(IDB_STORE);
+    if (stored && Array.isArray(stored) && stored.length > 0) {
+      _cache = stored;
+    } else {
+      _cache = SAMPLE_ARTIFACTS;
+      await idbSet(IDB_STORE, _cache);
+    }
+    _initialized = true;
+  })();
+
+  return _initPromise;
+}
+
+function getCache(): Artifact[] {
+  return _cache ?? SAMPLE_ARTIFACTS;
+}
+
+function persistAsync(artifacts: Artifact[]): void {
+  idbSet(IDB_STORE, artifacts).catch(() => {});
+}
+
+export function getArtifacts(): Artifact[] {
+  return getCache();
 }
 
 export function saveArtifacts(artifacts: Artifact[]): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(artifacts));
+  _cache = artifacts;
+  persistAsync(artifacts);
 }
 
 export function createArtifact(

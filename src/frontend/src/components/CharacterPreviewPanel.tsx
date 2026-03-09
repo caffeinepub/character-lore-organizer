@@ -914,7 +914,7 @@ export default function CharacterPreviewPanel({
                   </motion.h2>
                   {character.title && (
                     <motion.p
-                      className="leading-snug mb-2"
+                      className={`leading-snug mb-2 ${getFontClass(character.titleFont ?? character.nameFont)}`}
                       style={{
                         color: character.textColor,
                         fontSize: `${Math.min(Math.max(character.titleFontSize ?? 20, 12), 28)}px`,

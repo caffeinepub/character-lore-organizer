@@ -1,4 +1,8 @@
 import { Toaster } from "@/components/ui/sonner";
+import { initArtifactStore } from "@/store/artifacts";
+import { initCharacterStore } from "@/store/characters";
+import { initFactionStore } from "@/store/factions";
+import { initLoreStore } from "@/store/lore";
 import AfterDarkGalleryView from "@/views/AfterDarkGalleryView";
 import ArtifactEditorView from "@/views/ArtifactEditorView";
 import ArtifactProfileView from "@/views/ArtifactProfileView";
@@ -13,7 +17,7 @@ import FactionSelectView from "@/views/FactionSelectView";
 import LoreView from "@/views/LoreView";
 import SearchView from "@/views/SearchView";
 import { AnimatePresence, motion } from "motion/react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 type View =
   | { name: "select" }
@@ -33,6 +37,17 @@ type View =
 export default function App() {
   const [view, setView] = useState<View>({ name: "select" });
   const [refreshKey, setRefreshKey] = useState(0);
+  const [storesReady, setStoresReady] = useState(false);
+
+  // Initialize all IndexedDB stores on mount
+  useEffect(() => {
+    Promise.all([
+      initCharacterStore(),
+      initFactionStore(),
+      initArtifactStore(),
+      initLoreStore(),
+    ]).then(() => setStoresReady(true));
+  }, []);
 
   const refresh = useCallback(() => {
     setRefreshKey((k) => k + 1);
@@ -105,6 +120,19 @@ export default function App() {
     },
     [goProfile],
   );
+
+  if (!storesReady) {
+    return (
+      <div className="w-full min-h-screen bg-background text-foreground flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 rounded-full border-2 border-gold/40 border-t-gold animate-spin" />
+          <p className="text-xs uppercase tracking-widest text-muted-foreground">
+            Loading...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full min-h-screen bg-background text-foreground overflow-hidden">

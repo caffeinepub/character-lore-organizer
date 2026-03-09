@@ -58,6 +58,9 @@ export default function CharacterProfileView({
   const bg = character.bgColor || "#0d0d1a";
   const tc = character.textColor || "#ffffff";
   const fontClass = getFontClass(character.nameFont);
+  const titleFontClass = getFontClass(
+    character.titleFont ?? character.nameFont,
+  );
   const nameFontSize = character.nameFontSize ?? 56;
   const titleFontSize = character.titleFontSize ?? 32;
 
@@ -185,7 +188,7 @@ export default function CharacterProfileView({
               {/* Title line */}
               {character.title && (
                 <p
-                  className="text-center w-full mb-4 font-medium tracking-wide opacity-80"
+                  className={`text-center w-full mb-4 font-medium tracking-wide opacity-80 ${titleFontClass}`}
                   style={{
                     color: tc,
                     fontSize: `clamp(1rem, ${titleFontSize}px, ${titleFontSize}px)`,
