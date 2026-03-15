@@ -8,12 +8,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { getArtifacts } from "@/store/artifacts";
 import type { Character } from "@/store/characters";
-import { getCharacters, getFontClass } from "@/store/characters";
+import {
+  POWER_TIER_COLORS,
+  getCharacters,
+  getFontClass,
+} from "@/store/characters";
+import { getFactions } from "@/store/factions";
 import { linkifyText } from "@/utils/linkifyText";
 import {
   ArrowLeft,
   ChevronDown,
+  Clock,
   Download,
   Edit,
   Shield,
@@ -28,6 +35,8 @@ interface CharacterProfileViewProps {
   onBack: () => void;
   onEdit: (id: string) => void;
   onNavigate: (id: string) => void;
+  onNavigateFaction?: (id: string) => void;
+  onNavigateArtifact?: (id: string) => void;
 }
 
 export default function CharacterProfileView({
@@ -35,9 +44,17 @@ export default function CharacterProfileView({
   onBack,
   onEdit,
   onNavigate,
+  onNavigateFaction,
+  onNavigateArtifact,
 }: CharacterProfileViewProps) {
   const [character, setCharacter] = useState<Character | null>(null);
   const [allCharacters, setAllCharacters] = useState<Character[]>([]);
+  const [allFactions, setAllFactions] = useState<
+    { id: string; name: string }[]
+  >([]);
+  const [allArtifacts, setAllArtifacts] = useState<
+    { id: string; name: string }[]
+  >([]);
   const [exportOpen, setExportOpen] = useState(false);
 
   useEffect(() => {
@@ -45,6 +62,10 @@ export default function CharacterProfileView({
     const found = chars.find((c) => c.id === characterId);
     setCharacter(found ?? null);
     setAllCharacters(chars);
+    const factions = getFactions().map((f) => ({ id: f.id, name: f.name }));
+    setAllFactions(factions);
+    const artifacts = getArtifacts().map((a) => ({ id: a.id, name: a.name }));
+    setAllArtifacts(artifacts);
   }, [characterId]);
 
   if (!character) {
@@ -163,7 +184,7 @@ export default function CharacterProfileView({
                 </Badge>
                 <span className="flex items-center gap-1 text-xs opacity-60">
                   <Star size={10} />
-                  Value: {character.value}
+                  {character.powerTier}
                 </span>
                 {(character.fame ?? 0) > 0 && (
                   <span className="flex items-center gap-1 text-xs opacity-60">
@@ -332,7 +353,16 @@ export default function CharacterProfileView({
               className="leading-loose text-lg whitespace-pre-wrap"
               style={{ color: `${tc}cc` }}
             >
-              {linkifyText(character.lore, allCharacters, tc, onNavigate)}
+              {linkifyText(
+                character.lore,
+                allCharacters,
+                tc,
+                onNavigate,
+                allFactions,
+                onNavigateFaction,
+                allArtifacts,
+                onNavigateArtifact,
+              )}
             </p>
           </ProfileSection>
         )}
@@ -349,7 +379,16 @@ export default function CharacterProfileView({
               className="leading-loose text-lg whitespace-pre-wrap"
               style={{ color: `${tc}cc` }}
             >
-              {linkifyText(character.backstory, allCharacters, tc, onNavigate)}
+              {linkifyText(
+                character.backstory,
+                allCharacters,
+                tc,
+                onNavigate,
+                allFactions,
+                onNavigateFaction,
+                allArtifacts,
+                onNavigateArtifact,
+              )}
             </p>
           </ProfileSection>
         )}
@@ -539,6 +578,26 @@ export default function CharacterProfileView({
           accentAlpha40={accentAlpha40}
           onNavigate={onNavigate}
         />
+      </div>
+
+      {/* Last Updated */}
+      <div className="max-w-4xl mx-auto px-6 pb-6">
+        <div
+          className="flex items-center gap-2 justify-end py-4 border-t"
+          style={{ borderColor: `${tc}20` }}
+        >
+          <Clock size={12} style={{ color: `${tc}40` }} />
+          <span className="text-xs" style={{ color: `${tc}40` }}>
+            Last updated:{" "}
+            {new Date(character.updatedAt).toLocaleDateString(undefined, {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </span>
+        </div>
       </div>
 
       {/* Footer */}

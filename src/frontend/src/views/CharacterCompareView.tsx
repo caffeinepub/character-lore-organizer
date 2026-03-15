@@ -8,7 +8,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { Character } from "@/store/characters";
-import { getCharacters, getFontClass } from "@/store/characters";
+import {
+  POWER_TIER_COLORS,
+  getCharacters,
+  getFontClass,
+} from "@/store/characters";
 import {
   ArrowLeft,
   ChevronLeft,
@@ -1071,10 +1075,13 @@ function OverviewCard({
             style={{ background: `${tc}10` }}
           >
             <p className="text-xs opacity-60" style={{ color: tc }}>
-              Power
+              Power Tier
             </p>
-            <p className="text-base font-black" style={{ color: tc }}>
-              {char.value}
+            <p
+              className="text-sm font-black"
+              style={{ color: POWER_TIER_COLORS[char.powerTier] ?? tc }}
+            >
+              {char.powerTier}
             </p>
           </div>
           <div

@@ -336,7 +336,7 @@ function SearchResultCard({
               {highlight(character.faction, query)}
             </span>
             <span className="text-xs text-muted-foreground">
-              · {character.value}
+              · {character.powerTier}
             </span>
           </div>
 

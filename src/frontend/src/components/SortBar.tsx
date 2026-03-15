@@ -10,7 +10,7 @@ interface SortBarProps {
 const SORT_OPTIONS: { label: string; field: SortField }[] = [
   { label: "Faction", field: "faction" },
   { label: "Name", field: "name" },
-  { label: "Value", field: "value" },
+  { label: "Tier", field: "powerTier" },
   { label: "Fame", field: "fame" },
   { label: "Created", field: "createdAt" },
   { label: "Updated", field: "updatedAt" },

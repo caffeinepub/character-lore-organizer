@@ -1,5 +1,47 @@
 import { idbGet, idbSet, migrateFromLocalStorage } from "./idb-store";
 
+export interface CharacterAbility {
+  id: string;
+  name: string;
+  description: string;
+  emoji: string;
+}
+
+export type PowerTier =
+  | "Fledgling"
+  | "Common"
+  | "Notable"
+  | "Renowned"
+  | "Legendary"
+  | "Mythic";
+
+export const POWER_TIER_OPTIONS: PowerTier[] = [
+  "Fledgling",
+  "Common",
+  "Notable",
+  "Renowned",
+  "Legendary",
+  "Mythic",
+];
+
+export const POWER_TIER_RANK: Record<PowerTier, number> = {
+  Fledgling: 0,
+  Common: 1,
+  Notable: 2,
+  Renowned: 3,
+  Legendary: 4,
+  Mythic: 5,
+};
+
+export const POWER_TIER_COLORS: Record<PowerTier, string> = {
+  Fledgling: "#9ca3af",
+  Common: "#4ade80",
+  Notable: "#60a5fa",
+  Renowned: "#a78bfa",
+  Legendary: "#fb923c",
+  Mythic: "#f87171",
+};
+
 export interface CharacterRelationship {
   description: string;
   linkedCharacterId: string;
@@ -9,7 +51,7 @@ export interface Character {
   id: string;
   name: string;
   faction: string;
-  value: number;
+  powerTier: PowerTier;
   shortDescription: string;
   lore: string;
   backstory: string;
@@ -17,6 +59,7 @@ export interface Character {
   funFacts: string[];
   tags: string[];
   relationships: CharacterRelationship[];
+  abilities: CharacterAbility[];
   galleryImages: string[];
   afterDarkImages: string[];
   portraitImageUrl: string;
@@ -49,7 +92,7 @@ export interface Character {
 export type SortField =
   | "faction"
   | "name"
-  | "value"
+  | "powerTier"
   | "fame"
   | "createdAt"
   | "updatedAt";
@@ -62,7 +105,7 @@ const SAMPLE_CHARACTERS: Character[] = [
     id: "char-001",
     name: "Aria Shadowbane",
     faction: "Shadowcourt",
-    value: 95,
+    powerTier: "Legendary",
     shortDescription: "A deadly shadow mage from the Shadowcourt",
     lore: "Born in the twilight between worlds, Aria was chosen by the Shadowcourt at age seven when she accidentally extinguished every torch in her village with a single breath. Trained in the ancient arts of shadow weaving, she became the most feared assassin in three kingdoms. Her presence is said to drop the temperature of any room she enters.",
     backstory:
@@ -84,6 +127,21 @@ const SAMPLE_CHARACTERS: Character[] = [
       {
         description: "Bitter rivals since the Purge of Vel'Ashara",
         linkedCharacterId: "char-002",
+      },
+    ],
+    abilities: [
+      {
+        id: "ab-001",
+        name: "Shadow Step",
+        description: "Teleports through shadows up to 30 meters instantly.",
+        emoji: "🌑",
+      },
+      {
+        id: "ab-002",
+        name: "Void Blade",
+        description:
+          "Channels shadow energy into her weapon, bypassing magical defenses.",
+        emoji: "⚫",
       },
     ],
     galleryImages: [],
@@ -117,7 +175,7 @@ const SAMPLE_CHARACTERS: Character[] = [
     id: "char-002",
     name: "Roland the Unyielding",
     faction: "Iron Order",
-    value: 88,
+    powerTier: "Renowned",
     shortDescription: "Legendary knight who never falls in battle",
     lore: "In forty years of war, Roland has never once touched the ground in defeat. His Iron Order brothers whisper that he made a bargain with the gods of battle — undying endurance in exchange for the ability to feel joy. Whether true or not, no smile has crossed his face since the Siege of Mordencroft.",
     backstory:
@@ -139,6 +197,21 @@ const SAMPLE_CHARACTERS: Character[] = [
         description:
           "Once encountered Nyx Voidwalker during the Void Incursion",
         linkedCharacterId: "char-003",
+      },
+    ],
+    abilities: [
+      {
+        id: "ab-003",
+        name: "Iron Will",
+        description: "Reduces all incoming damage by 40% for 10 seconds.",
+        emoji: "🛡️",
+      },
+      {
+        id: "ab-004",
+        name: "Rally Cry",
+        description:
+          "Inspires nearby allies, granting them temporary endurance.",
+        emoji: "📢",
       },
     ],
     galleryImages: [],
@@ -172,7 +245,7 @@ const SAMPLE_CHARACTERS: Character[] = [
     id: "char-003",
     name: "Nyx Voidwalker",
     faction: "Void Collective",
-    value: 72,
+    powerTier: "Mythic",
     shortDescription: "An entity from beyond the void",
     lore: "Nyx does not remember being born, because Nyx was not. They emerged from the Void approximately three centuries ago with no memory, no origin, and an instinctive understanding of reality's deepest cracks. The Void Collective did not recruit Nyx — they merely acknowledged what was already there.",
     backstory:
@@ -195,6 +268,21 @@ const SAMPLE_CHARACTERS: Character[] = [
         description:
           "Observes Roland the Unyielding from the shadows with quiet curiosity",
         linkedCharacterId: "char-002",
+      },
+    ],
+    abilities: [
+      {
+        id: "ab-005",
+        name: "Reality Tear",
+        description: "Opens a rift in space, dealing void damage in a line.",
+        emoji: "🌀",
+      },
+      {
+        id: "ab-006",
+        name: "Phase Shift",
+        description:
+          "Becomes intangible for 3 seconds, passing through matter.",
+        emoji: "👻",
       },
     ],
     galleryImages: [],
@@ -226,18 +314,15 @@ const SAMPLE_CHARACTERS: Character[] = [
   },
 ];
 
-// In-memory cache — populated on init
 let _cache: Character[] | null = null;
 let _initialized = false;
 let _initPromise: Promise<void> | null = null;
 
-/** Initialize the store: migrate from localStorage if needed, then load from IndexedDB. */
 export async function initCharacterStore(): Promise<void> {
   if (_initialized) return;
   if (_initPromise) return _initPromise;
 
   _initPromise = (async () => {
-    // Try migration from localStorage first
     const migrated = await migrateFromLocalStorage(LS_KEY, IDB_STORE);
     if (migrated && Array.isArray(migrated)) {
       _cache = (migrated as Character[]).map(migrateCharacter);
@@ -245,7 +330,6 @@ export async function initCharacterStore(): Promise<void> {
       return;
     }
 
-    // Load from IndexedDB
     const stored = await idbGet<Character[]>(IDB_STORE);
     if (stored && Array.isArray(stored) && stored.length > 0) {
       _cache = stored.map(migrateCharacter);
@@ -259,8 +343,19 @@ export async function initCharacterStore(): Promise<void> {
   return _initPromise;
 }
 
-function migrateCharacter(c: Character): Character {
-  const migrated = { ...c } as Character;
+function migrateCharacter(c: Character & { value?: number }): Character {
+  const migrated = { ...c } as Character & { value?: number };
+  if (!migrated.powerTier) {
+    const v = (migrated.value ?? 0) as number;
+    if (v >= 900) migrated.powerTier = "Mythic";
+    else if (v >= 700) migrated.powerTier = "Legendary";
+    else if (v >= 500) migrated.powerTier = "Renowned";
+    else if (v >= 300) migrated.powerTier = "Notable";
+    else if (v >= 100) migrated.powerTier = "Common";
+    else migrated.powerTier = "Fledgling";
+  }
+  (migrated as { value?: number }).value = undefined;
+  if (!migrated.abilities) migrated.abilities = [];
   if (migrated.fame === undefined) migrated.fame = 0;
   if (migrated.nameFontSize === undefined) migrated.nameFontSize = 56;
   if (migrated.title === undefined) migrated.title = "";
@@ -292,10 +387,7 @@ function getCache(): Character[] {
 }
 
 function persistAsync(chars: Character[]): void {
-  // Fire-and-forget async write
-  idbSet(IDB_STORE, chars).catch(() => {
-    // Silently ignore — in-memory still valid
-  });
+  idbSet(IDB_STORE, chars).catch(() => {});
 }
 
 export function getCharacters(): Character[] {
@@ -350,7 +442,6 @@ export function searchCharacters(
 
   for (const c of chars) {
     const matchedFields: string[] = [];
-
     if (c.name.toLowerCase().includes(q)) matchedFields.push("name");
     if (c.faction.toLowerCase().includes(q)) matchedFields.push("faction");
     if (c.shortDescription.toLowerCase().includes(q))
@@ -361,10 +452,7 @@ export function searchCharacters(
       matchedFields.push("traits");
     if (c.funFacts.some((f) => f.toLowerCase().includes(q)))
       matchedFields.push("fun facts");
-
-    if (matchedFields.length > 0) {
-      results.push({ character: c, matchedFields });
-    }
+    if (matchedFields.length > 0) results.push({ character: c, matchedFields });
   }
 
   return results;
@@ -384,8 +472,10 @@ function sortGroup(
       case "faction":
         cmp = a.faction.localeCompare(b.faction);
         break;
-      case "value":
-        cmp = a.value - b.value;
+      case "powerTier":
+        cmp =
+          (POWER_TIER_RANK[a.powerTier] ?? 0) -
+          (POWER_TIER_RANK[b.powerTier] ?? 0);
         break;
       case "fame":
         cmp = (a.fame ?? 0) - (b.fame ?? 0);

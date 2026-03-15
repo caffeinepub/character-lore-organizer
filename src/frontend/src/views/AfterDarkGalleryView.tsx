@@ -5,6 +5,17 @@ import { ArrowLeft, Image as ImageIcon, Lock, X } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
+const AFTER_DARK_SESSION_KEY = "after_dark_unlocked";
+const CORRECT_PIN = "yugi";
+
+function isAfterDarkUnlocked(): boolean {
+  try {
+    return sessionStorage.getItem(AFTER_DARK_SESSION_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
 interface AfterDarkGalleryViewProps {
   characterId: string;
   onBack: () => void;
@@ -22,7 +33,7 @@ export default function AfterDarkGalleryView({
     nameFont: string;
   } | null>(null);
   const [pin, setPin] = useState("");
-  const [unlocked, setUnlocked] = useState(false);
+  const [unlocked, setUnlocked] = useState(isAfterDarkUnlocked);
   const [pinError, setPinError] = useState(false);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -49,7 +60,12 @@ export default function AfterDarkGalleryView({
 
   const handlePinSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (pin === "yugi") {
+    if (pin === CORRECT_PIN) {
+      try {
+        sessionStorage.setItem(AFTER_DARK_SESSION_KEY, "true");
+      } catch {
+        /* ignore */
+      }
       setUnlocked(true);
       setPinError(false);
     } else {
@@ -75,7 +91,6 @@ export default function AfterDarkGalleryView({
         className="min-h-screen flex flex-col items-center justify-center relative"
         style={{ backgroundColor: bg, color: tc }}
       >
-        {/* Atmospheric overlay */}
         <div
           className="fixed inset-0 pointer-events-none"
           style={{
@@ -90,7 +105,6 @@ export default function AfterDarkGalleryView({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
-          {/* Lock icon */}
           <div
             className="w-16 h-16 rounded-full flex items-center justify-center border"
             style={{ borderColor: `${tc}30`, background: `${tc}08` }}
@@ -178,7 +192,6 @@ export default function AfterDarkGalleryView({
       className="min-h-screen relative"
       style={{ backgroundColor: bg, color: tc }}
     >
-      {/* Atmospheric gradient */}
       <div
         className="fixed inset-0 pointer-events-none"
         style={{
@@ -186,7 +199,6 @@ export default function AfterDarkGalleryView({
         }}
       />
 
-      {/* Header */}
       <header
         className="sticky top-0 z-30 flex items-center justify-between px-6 py-4 backdrop-blur-md border-b"
         style={{ borderColor: `${tc}20`, background: `${bg}cc` }}
@@ -202,18 +214,15 @@ export default function AfterDarkGalleryView({
           <ArrowLeft size={16} />
           Back
         </Button>
-
         <div className="flex items-center gap-2">
           <Lock size={12} style={{ color: `${tc}60` }} />
           <span className="text-xs uppercase tracking-[0.25em] font-medium opacity-60">
             {character.name} — After Dark
           </span>
         </div>
-
         <div className="w-16" />
       </header>
 
-      {/* Private disclaimer */}
       <div className="max-w-5xl mx-auto px-6 pt-6">
         <p
           className="text-xs text-center uppercase tracking-widest py-2 px-4 rounded border inline-block w-full"
@@ -227,7 +236,6 @@ export default function AfterDarkGalleryView({
         </p>
       </div>
 
-      {/* Gallery grid */}
       <main className="max-w-5xl mx-auto px-6 py-6">
         {character.afterDarkImages.length === 0 ? (
           <motion.div
@@ -287,7 +295,6 @@ export default function AfterDarkGalleryView({
         )}
       </main>
 
-      {/* Footer */}
       <footer
         className="mt-10 py-6 border-t text-center text-xs"
         style={{ borderColor: `${tc}20`, color: `${tc}40` }}
@@ -304,7 +311,6 @@ export default function AfterDarkGalleryView({
         </a>
       </footer>
 
-      {/* Lightbox */}
       <Dialog
         open={!!lightboxSrc}
         onOpenChange={(open) => !open && setLightboxSrc(null)}

@@ -49,6 +49,20 @@ export default function App() {
     ]).then(() => setStoresReady(true));
   }, []);
 
+  // Initialize dark/light mode
+  useEffect(() => {
+    try {
+      const theme = localStorage.getItem("theme");
+      if (theme === "light") {
+        document.documentElement.classList.add("light-mode");
+      } else {
+        document.documentElement.classList.remove("light-mode");
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   const refresh = useCallback(() => {
     setRefreshKey((k) => k + 1);
   }, []);

@@ -1,10 +1,18 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Character } from "@/store/characters";
-import { getFontClass } from "@/store/characters";
-import { Lock, Shield, Star, User } from "lucide-react";
+import { POWER_TIER_COLORS, getFontClass } from "@/store/characters";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Lock,
+  Shield,
+  Star,
+  User,
+  Zap,
+} from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import AudioPlayer from "./AudioPlayer";
 
 interface CharacterPreviewPanelProps {
@@ -803,8 +811,34 @@ export default function CharacterPreviewPanel({
   onViewProfile,
   onViewGallery,
 }: CharacterPreviewPanelProps) {
+  const [previewTab, setPreviewTab] = useState(0); // 0=main, 1=abilities
+  const touchStartX = useRef<number | null>(null);
+
+  // Reset tab when character changes
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reset on character change
+  useEffect(() => {
+    setPreviewTab(0);
+  }, [character?.id]);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    if (Math.abs(dx) > 50) {
+      if (dx < 0 && previewTab === 0) setPreviewTab(1);
+      else if (dx > 0 && previewTab === 1) setPreviewTab(0);
+    }
+    touchStartX.current = null;
+  };
+
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden">
+    <div
+      className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       <AnimatePresence mode="wait">
         {!character ? (
           <motion.div
@@ -936,10 +970,18 @@ export default function CharacterPreviewPanel({
                       <Shield size={10} />
                       {character.faction}
                     </Badge>
-                    <span className="flex items-center gap-1 text-xs text-gold/70">
-                      <Star size={10} className="fill-gold/70 text-gold/70" />
-                      {character.value}
-                    </span>
+                    {character.powerTier && (
+                      <span
+                        className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full"
+                        style={{
+                          background: `${POWER_TIER_COLORS[character.powerTier]}22`,
+                          color: POWER_TIER_COLORS[character.powerTier],
+                          border: `1px solid ${POWER_TIER_COLORS[character.powerTier]}44`,
+                        }}
+                      >
+                        {character.powerTier}
+                      </span>
+                    )}
                     {(character.fame ?? 0) > 0 && (
                       <span
                         className="flex items-center gap-1 text-xs opacity-70"
@@ -952,49 +994,166 @@ export default function CharacterPreviewPanel({
                   </div>
                 </div>
 
-                {/* ── MIDDLE ZONE: Character image (max space) ── */}
+                {/* ── MIDDLE ZONE: Character image OR abilities ── */}
                 <div className="flex-1 relative overflow-hidden">
-                  {character.fullBodyImageUrl || character.portraitImageUrl ? (
-                    <>
-                      {/* Blurred background layer — ambient color fill */}
-                      <img
-                        src={
-                          character.fullBodyImageUrl ||
-                          character.portraitImageUrl
-                        }
-                        alt=""
-                        aria-hidden="true"
-                        className="absolute inset-0 w-full h-full object-cover"
+                  <AnimatePresence mode="wait">
+                    {previewTab === 0 ? (
+                      <motion.div
+                        key="image-panel"
+                        className="absolute inset-0"
+                        initial={{ opacity: 0, x: 30 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -30 }}
+                        transition={{ duration: 0.25 }}
+                      >
+                        {character.fullBodyImageUrl ||
+                        character.portraitImageUrl ? (
+                          <>
+                            <img
+                              src={
+                                character.fullBodyImageUrl ||
+                                character.portraitImageUrl
+                              }
+                              alt=""
+                              aria-hidden="true"
+                              className="absolute inset-0 w-full h-full object-cover"
+                              style={{
+                                filter: "blur(40px)",
+                                transform: "scale(1.1)",
+                                opacity: 0.6,
+                              }}
+                            />
+                            <motion.img
+                              src={
+                                character.fullBodyImageUrl ||
+                                character.portraitImageUrl
+                              }
+                              alt={character.name}
+                              className="absolute inset-0 w-full h-full object-contain object-center"
+                              initial={{ scale: 1.02, opacity: 0 }}
+                              animate={{ scale: 1, opacity: 1 }}
+                              transition={{ duration: 0.5, ease: "easeOut" }}
+                            />
+                          </>
+                        ) : (
+                          <div
+                            className="absolute inset-0 flex items-center justify-center"
+                            style={{ background: `${character.bgColor}40` }}
+                          >
+                            <User
+                              size={64}
+                              className="text-muted-foreground opacity-40"
+                            />
+                          </div>
+                        )}
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="abilities-panel"
+                        className="absolute inset-0 overflow-y-auto p-4"
+                        initial={{ opacity: 0, x: 30 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -30 }}
+                        transition={{ duration: 0.25 }}
+                        style={{ background: `${character.bgColor}ee` }}
+                      >
+                        <div className="flex items-center gap-2 mb-3">
+                          <Zap
+                            size={14}
+                            style={{ color: character.textColor }}
+                          />
+                          <span
+                            className="text-xs font-bold uppercase tracking-widest"
+                            style={{ color: character.textColor, opacity: 0.7 }}
+                          >
+                            Abilities
+                          </span>
+                        </div>
+                        {(character.abilities ?? []).length === 0 ? (
+                          <div className="flex flex-col items-center justify-center h-32 gap-2 text-center">
+                            <Zap
+                              size={28}
+                              style={{ color: `${character.textColor}40` }}
+                            />
+                            <p
+                              className="text-xs"
+                              style={{ color: `${character.textColor}60` }}
+                            >
+                              No abilities added yet
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {(character.abilities ?? []).map((ability) => (
+                              <div
+                                key={ability.id}
+                                className="flex gap-3 p-3 rounded-lg"
+                                style={{
+                                  background: `${character.textColor}10`,
+                                  border: `1px solid ${character.textColor}20`,
+                                }}
+                              >
+                                <span className="text-2xl shrink-0 leading-none mt-0.5">
+                                  {ability.emoji || "⚡"}
+                                </span>
+                                <div>
+                                  <p
+                                    className="text-sm font-bold mb-1"
+                                    style={{ color: character.textColor }}
+                                  >
+                                    {ability.name}
+                                  </p>
+                                  <p
+                                    className="text-xs leading-relaxed"
+                                    style={{
+                                      color: `${character.textColor}bb`,
+                                    }}
+                                  >
+                                    {ability.description}
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Swipe hint dots */}
+                  {(character.abilities ?? []).length > 0 ||
+                  previewTab === 1 ? (
+                    <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-2 z-10">
+                      <button
+                        type="button"
+                        onClick={() => setPreviewTab(0)}
+                        className="w-2 h-2 rounded-full transition-all duration-200"
                         style={{
-                          filter: "blur(40px)",
-                          transform: "scale(1.1)",
-                          opacity: 0.6,
+                          background:
+                            previewTab === 0
+                              ? character.textColor
+                              : `${character.textColor}40`,
+                          transform:
+                            previewTab === 0 ? "scale(1.2)" : "scale(1)",
                         }}
+                        aria-label="Character image panel"
                       />
-                      {/* Foreground character image — full body preferred */}
-                      <motion.img
-                        src={
-                          character.fullBodyImageUrl ||
-                          character.portraitImageUrl
-                        }
-                        alt={character.name}
-                        className="absolute inset-0 w-full h-full object-contain object-center"
-                        initial={{ scale: 1.02, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{ duration: 0.5, ease: "easeOut" }}
-                      />
-                    </>
-                  ) : (
-                    <div
-                      className="absolute inset-0 flex items-center justify-center"
-                      style={{ background: `${character.bgColor}40` }}
-                    >
-                      <User
-                        size={64}
-                        className="text-muted-foreground opacity-40"
+                      <button
+                        type="button"
+                        onClick={() => setPreviewTab(1)}
+                        className="w-2 h-2 rounded-full transition-all duration-200"
+                        style={{
+                          background:
+                            previewTab === 1
+                              ? character.textColor
+                              : `${character.textColor}40`,
+                          transform:
+                            previewTab === 1 ? "scale(1.2)" : "scale(1)",
+                        }}
+                        aria-label="Abilities panel"
                       />
                     </div>
-                  )}
+                  ) : null}
                 </div>
 
                 {/* ── BOTTOM ZONE: View Profile ABOVE music controls ── */}

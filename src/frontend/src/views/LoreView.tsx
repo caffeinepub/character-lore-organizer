@@ -2,8 +2,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { getArtifacts } from "@/store/artifacts";
 import { getCharacters } from "@/store/characters";
 import type { Character } from "@/store/characters";
+import { getFactions } from "@/store/factions";
 import type { LoreEntry } from "@/store/lore";
 import {
   createLoreEntry,
@@ -27,6 +29,8 @@ import { useEffect, useState } from "react";
 interface LoreViewProps {
   onBack: () => void;
   onNavigateToCharacter: (id: string) => void;
+  onNavigateToFaction?: (id: string) => void;
+  onNavigateToArtifact?: (id: string) => void;
 }
 
 interface EditingState {
@@ -38,9 +42,15 @@ interface EditingState {
 export default function LoreView({
   onBack,
   onNavigateToCharacter,
+  onNavigateToFaction,
+  onNavigateToArtifact,
 }: LoreViewProps) {
   const [entries, setEntries] = useState<LoreEntry[]>([]);
   const [characters, setCharacters] = useState<Character[]>([]);
+  const [factions, setFactions] = useState<{ id: string; name: string }[]>([]);
+  const [artifacts, setArtifacts] = useState<{ id: string; name: string }[]>(
+    [],
+  );
   const [editing, setEditing] = useState<EditingState | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -49,6 +59,8 @@ export default function LoreView({
   useEffect(() => {
     setEntries(getLoreEntries());
     setCharacters(getCharacters());
+    setFactions(getFactions().map((f) => ({ id: f.id, name: f.name })));
+    setArtifacts(getArtifacts().map((a) => ({ id: a.id, name: a.name })));
   }, []);
 
   const handleSave = () => {
@@ -427,6 +439,10 @@ export default function LoreView({
                               characters,
                               "oklch(0.82 0.15 75)",
                               onNavigateToCharacter,
+                              factions,
+                              onNavigateToFaction,
+                              artifacts,
+                              onNavigateToArtifact,
                             )}
                           </p>
                           <p

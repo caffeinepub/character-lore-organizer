@@ -2,60 +2,52 @@
 
 ## Current State
 
-- Full character roster with portrait grid sidebar, preview panel, and profile views
-- Character editor with CRUD, images, music, colors, fonts, animations
-- 18 entry animations for the preview panel
-- Random character button using a D20 SVG die
-- Factions, Lore, Gallery, After Dark (PIN-protected), Compare, Search views
-- Characters store with: name, faction, value, fame, title, lore, backstory, traits, funFacts, tags, relationships, galleryImages, afterDarkImages, portraits, music, bgColor, textColor, nameFont, nameFontSize, titleFontSize, previewAnimation
-- Factions store with: name, symbolImageUrl, shortDescription, lore, exMembers
-- SortBar with: faction, name, value, fame, createdAt, updatedAt
-- Search with text across all character fields
+Full-featured character wiki builder with:
+- Character select screen (portrait grid sidebar, preview panel with animations, full-body image center)
+- Character profiles (custom colors/fonts, hex stats, galleries, after dark gallery)
+- Entry animations (Sparkle, Wave, Fire, Vines, Ice Shatter, Spooky Skull, Science 3 colors, Lightning Blue/Yellow, Golden Shield, Door & Lock, Holy Wings, Glitch, Sun Rising, Moon Rising, Floating Hearts, Gambler Dice, Gold Coins Rain, Flower Spin)
+- Lore section (multi-entry wiki with character name auto-links)
+- Factions page (preview + full profile, known/ex members, accent color)
+- Artifacts page (preview + full profile, rarity, wielded by)
+- Character comparison (5-panel swipe: Face-Off, Hex Charts, Stat Bars, Overview, Verdict)
+- Power field (0-999 number), Fame field, sorting
+- Word search, search history (last 3), D6 random character roller
+- Pinning, portrait border colors, signature quotes, tags, relationships
+- IndexedDB storage
 
 ## Requested Changes (Diff)
 
 ### Add
-
-1. **Six-sided die (D6) SVG** to replace the current D20 SVG in CharacterSelectView — show a cube face with 1–6 dot pips, glowing gold, animates rolling then reveals character name
-2. **Gambler animation** — new entry animation: two six-sided dice roll up from the bottom, tumble/spin, land, then vanish before character image fades in (CSS keyframe overlay)
-3. **Gold Coins animation** — new entry animation: coins rain down from the top of the preview panel before character image fades in (CSS keyframe overlay)
-4. **Flower animation** — new entry animation: a flower SVG spins gently on screen then fades away before character image reveals (CSS keyframe overlay)
-5. **Search history** — last 3 searches saved to localStorage, shown as quick-click chips below the search input in SearchView
-6. **Pin/Favorite characters** — star icon on each portrait card in the sidebar; pinned characters always float to the top of the roster above other sorted characters; `pinned: boolean` field added to Character type with migration
-7. **Portrait border color** — per-character color picker in the editor (hex + color input); `portraitBorderColor: string` added to Character type; applied as border color on the portrait card in the sidebar
-8. **Faction accent color** — `accentColor: string` field added to Faction type; color picker in FactionEditorModal; faction cards in FactionSelectView get a subtle tint/glow using their accent color
-9. **Signature field** — `signature: string` field added to Character type; textarea in editor under Profile Appearance; displayed prominently on CharacterProfileView with distinct italic styling, quoted format, labeled "Signature"
+- **Dark/light mode toggle** in the app header/nav - persisted in localStorage
+- **Last Updated timestamp** at the bottom of the character full profile page (not preview)
+- **Lore cross-links expanded**: faction names and artifact names in lore/backstory text also become clickable links (in addition to character names already working)
+- **Power level → Tier system**: replace the numeric 0-999 Power input with a dropdown tier: Fledgling, Common, Notable, Renowned, Legendary, Mythic. Show tier as a colored badge on profile and roster. Keep sorting by tier (in order of tier rank).
+- **Swipeable Abilities panel on preview**: when a character's preview panel is open, the user can swipe left to reveal a second panel showing that character's abilities list. Swipe right to go back to the main preview. Abilities are a list of items each with: name, short description, optionally an icon/emoji. Abilities are added/edited in the character editor.
+- **Editor PIN gate** ("yugi"): a PIN is required once per browser session to unlock editing. Covers all create/edit/delete actions for characters, factions, artifacts, lore entries. Viewing/browsing stays open. PIN stored in sessionStorage so not required again until tab is closed.
+- **After Dark PIN** also once per session (already implemented - verify it uses sessionStorage not prompt-every-time)
 
 ### Modify
-
-- **Character store migration** — add `pinned`, `portraitBorderColor`, `signature` fields with safe defaults in `getCharacters()` migration block
-- **Faction store migration** — add `accentColor` field with default `#c9a84c` in `getFactions()` migration block
-- **CharacterSelectView** — replace D20Svg with D6Svg component; pin indicator (⭐ or star icon) overlaid on portrait card; sorting logic: pinned characters always sort to top before applying current sort; portrait card border uses `char.portraitBorderColor` when set
-- **CharacterEditorView** — add Portrait Border Color field (color picker + hex input) in Profile Appearance section; add Signature textarea in Lore section (or Profile Appearance); add `pinned` toggle/checkbox
-- **CharacterPreviewPanel** — add Gambler, Gold Coins, and Flower animation cases to `getAnimationProps` and overlay rendering
-- **CharacterProfileView** — add Signature section displayed near the top of the profile (below name/title), styled as a large italic quote
-- **FactionSelectView/FactionEditorModal** — add accent color field; faction cards tinted with accent color
-- **SearchView** — add search history (last 3) stored in localStorage, displayed as chip buttons above/below search input
-- **ANIMATION_OPTIONS** in CharacterEditorView — add gambler, gold-coins, flower entries
-- **index.css** — add CSS keyframe animations for gambler dice, gold coins raining, and flower spin/fade
+- **Entry animations**: make all animations more visible and have them overlay the character image during their sequence. Specific improvements:
+  - Sparkles: more particles (20+), larger stars, scattered across entire panel including over the image
+  - Sun Rising: full complete sun disk rises up from bottom, clearly visible above midpoint before fading
+  - Ice Shatter: show crack lines spreading across the panel first, then shatter effect
+  - Science bubbles: bubbles rise much higher, well past the midpoint, cross over the character image
+  - All other animations reviewed for visibility and prominence
 
 ### Remove
-
-- D20Svg component (replaced by D6Svg)
-- `Dice5` lucide icon import (replaced with custom D6Svg or kept if no conflict)
+- Numeric power input (replaced by tier dropdown)
 
 ## Implementation Plan
 
-1. Update `characters.ts` store: add `pinned`, `portraitBorderColor`, `signature` fields + migration
-2. Update `factions.ts` store: add `accentColor` field + migration
-3. Add D6Svg component in CharacterSelectView, replace D20Svg usage and label
-4. Add new CSS animations in index.css: gambler-dice, gold-coins-rain, flower-spin
-5. Add GamblerOverlay, GoldCoinsOverlay, FlowerOverlay components in CharacterPreviewPanel
-6. Add gambler/gold-coins/flower cases to getAnimationProps and overlay render block
-7. Update CharacterSelectView: pin star on portrait cards, pinned-first sorting, portraitBorderColor border
-8. Update CharacterEditorView: Portrait Border Color picker, Signature field, pinned toggle, new animation options
-9. Update CharacterProfileView: Signature display section
-10. Update FactionEditorModal: accentColor picker
-11. Update FactionSelectView: faction card accent color tinting
-12. Update SearchView: search history localStorage (last 3), chip display
-13. Validate and fix any TypeScript errors
+1. Add `abilities` array field to character data model (each ability: id, name, description, emoji)
+2. Add `powerTier` string field replacing numeric `power` (values: Fledgling/Common/Notable/Renowned/Legendary/Mythic)
+3. Add dark/light mode toggle to nav header, persist in localStorage, apply to entire app via CSS class
+4. Add tier badge display on character profile and roster cards
+5. Update sort logic for tier (rank order not alphabetical)
+6. Add abilities editor in CharacterEditorView (add/remove/edit abilities list)
+7. Add swipeable second panel on CharacterPreviewPanel showing abilities list, with swipe left/right gesture and dot indicator
+8. Rework all entry animations to overlay image and be more visible
+9. Add lastUpdated field tracking and display at bottom of CharacterProfileView
+10. Expand linkifyText utility to also detect and link faction names and artifact names
+11. Add Editor PIN gate component - checks sessionStorage, shows PIN modal on first edit action per session
+12. Ensure After Dark PIN also uses sessionStorage (once per session)

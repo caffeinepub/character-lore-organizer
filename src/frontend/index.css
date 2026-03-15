@@ -858,3 +858,139 @@
     heartSway var(--heart-sway, 1.2s) ease-in-out var(--heart-delay, 0s) infinite alternate;
   filter: drop-shadow(0 0 10px oklch(0.72 0.28 0 / 0.7)) drop-shadow(0 0 22px oklch(0.82 0.22 0 / 0.4));
 }
+
+/* ── Light Mode Theme ────────────────────────────────────────────────────── */
+html.light-mode {
+  color-scheme: light;
+}
+
+html.light-mode :root {
+  --background: 0.96 0.008 80;
+  --foreground: 0.15 0.02 280;
+
+  --card: 0.98 0.006 80;
+  --card-foreground: 0.15 0.02 280;
+
+  --popover: 0.98 0.006 80;
+  --popover-foreground: 0.15 0.02 280;
+
+  --primary: 0.6 0.12 75;
+  --primary-foreground: 0.98 0.006 80;
+
+  --secondary: 0.9 0.015 80;
+  --secondary-foreground: 0.2 0.02 280;
+
+  --muted: 0.88 0.012 80;
+  --muted-foreground: 0.45 0.03 280;
+
+  --accent: 0.85 0.015 80;
+  --accent-foreground: 0.2 0.02 280;
+
+  --destructive: 0.55 0.22 25;
+  --destructive-foreground: 0.98 0 0;
+
+  --border: 0.82 0.02 80;
+  --input: 0.88 0.01 80;
+  --ring: 0.6 0.12 75;
+
+  --gold: 0.65 0.14 75;
+  --gold-dim: 0.5 0.10 75;
+
+  --sidebar: 0.94 0.008 80;
+  --sidebar-foreground: 0.15 0.02 280;
+  --sidebar-primary: 0.6 0.12 75;
+  --sidebar-primary-foreground: 0.98 0.006 80;
+  --sidebar-accent: 0.88 0.012 80;
+  --sidebar-accent-foreground: 0.2 0.02 280;
+  --sidebar-border: 0.82 0.02 80;
+  --sidebar-ring: 0.6 0.12 75;
+}
+
+/* ── Animation z-index boost — overlay above image ────────────────────── */
+.sparkle-particle { z-index: 40; }
+.wave-main { z-index: 38; }
+.wave-foam { z-index: 39; }
+.fire-overlay { z-index: 38; }
+.fire-overlay-flicker { z-index: 39; }
+.vine-corner-tl-h, .vine-corner-tl-v, .vine-corner-tr-h,
+.vine-corner-br-h, .vine-corner-bl-v { z-index: 38; }
+.ice-overlay { z-index: 38; }
+.spooky-glow-ring, .spooky-skull { z-index: 38; }
+.bubble { z-index: 40; }
+.lightning-flash-blue, .lightning-flash-yellow { z-index: 42; }
+.lightning-shake-wrap { z-index: 38; }
+.golden-shield-icon { z-index: 40; }
+.door-container { z-index: 40; }
+.holy-wings { z-index: 40; }
+.glitch-overlay { z-index: 42; }
+.glitch-layer { z-index: 41; }
+.sun-glow-orb { z-index: 42; }
+.sun-rays-layer { z-index: 38; }
+.sun-horizon-glow { z-index: 39; }
+.moon-orb { z-index: 42; }
+.moon-glow-ring { z-index: 38; }
+.moon-stars-layer { z-index: 39; }
+.gambler-die-1, .gambler-die-2 { z-index: 40; }
+.gold-coin { z-index: 40; }
+.flower-overlay { z-index: 40; }
+.heart-particle { z-index: 42; }
+
+/* ── Improved sun: full disk visible rising to 60% ──────────────────────── */
+.sun-glow-orb {
+  width: 200px !important;
+  height: 200px !important;
+}
+
+@keyframes sun-glow-rise-v2 {
+  0% { opacity: 0; transform: translateX(-50%) translateY(80%) scale(0.5); filter: blur(10px); }
+  20% { opacity: 1; filter: blur(2px); }
+  55% { opacity: 1; transform: translateX(-50%) translateY(-20%) scale(1.0); filter: blur(0px); }
+  80% { opacity: 0.9; transform: translateX(-50%) translateY(-35%) scale(1.05); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-50%) scale(1.1); filter: blur(10px); }
+}
+.sun-glow-orb {
+  animation: sun-glow-rise-v2 1.6s ease-out forwards !important;
+}
+
+/* ── Improved bubbles: rise full height ────────────────────────────────── */
+@keyframes bubble-rise-full {
+  0% { transform: translateY(0) scale(1); opacity: 0.9; }
+  20% { opacity: 1; }
+  100% { transform: translateY(-110vh) scale(0.6); opacity: 0; }
+}
+.bubble {
+  animation: bubble-rise-full 1.8s ease-in forwards !important;
+}
+
+/* ── Improved sparkles: larger and more visible ─────────────────────────── */
+.sparkle-particle {
+  width: 28px !important;
+  height: 28px !important;
+}
+@keyframes sparkle-pop-v2 {
+  0% { transform: scale(0) rotate(0deg); opacity: 1; }
+  50% { transform: scale(1.6) rotate(120deg); opacity: 1; }
+  100% { transform: scale(2.2) rotate(220deg); opacity: 0; }
+}
+.sparkle-particle {
+  animation: sparkle-pop-v2 1.1s ease-out forwards !important;
+}
+
+/* ── Ice shatter: more dramatic cracks ────────────────────────────────── */
+@keyframes ice-crack-shatter {
+  0% { opacity: 0.9; background: oklch(0.75 0.12 220 / 0.85); clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
+  30% { opacity: 0.95; background: oklch(0.8 0.14 215 / 0.9); }
+  60% {
+    opacity: 0.8;
+    clip-path: polygon(
+      0 0, 42% 0, 50% 8%, 58% 0, 100% 0,
+      100% 38%, 92% 45%, 100% 52%, 100% 100%,
+      60% 100%, 55% 92%, 45% 100%, 0 100%,
+      0 55%, 8% 48%, 0 40%, 0 0
+    );
+  }
+  100% { opacity: 0; clip-path: polygon(20% 0, 50% 0, 80% 0, 100% 20%, 100% 50%, 100% 80%, 80% 100%, 50% 100%, 20% 100%, 0 80%, 0 50%, 0 20%); transform: scale(1.1); }
+}
+.ice-overlay {
+  animation: ice-crack-shatter 1.5s ease-out forwards !important;
+}

@@ -2,15 +2,21 @@ import CharacterPreviewPanel from "@/components/CharacterPreviewPanel";
 import SortBar from "@/components/SortBar";
 import { Button } from "@/components/ui/button";
 import type { Character, SortField } from "@/store/characters";
-import { getCharacters, sortCharacters } from "@/store/characters";
+import {
+  POWER_TIER_COLORS,
+  getCharacters,
+  sortCharacters,
+} from "@/store/characters";
 import {
   BookOpen,
   Dice5,
   GitCompare,
+  Moon,
   Plus,
   Search,
   Shield,
   Star,
+  Sun,
   Sword,
   User,
 } from "lucide-react";
@@ -49,6 +55,28 @@ export default function CharacterSelectView({
     "rolling",
   );
   const [randomChar, setRandomChar] = useState<Character | null>(null);
+  const [isDark, setIsDark] = useState(() => {
+    try {
+      return localStorage.getItem("theme") !== "light";
+    } catch {
+      return true;
+    }
+  });
+
+  const toggleTheme = () => {
+    const newDark = !isDark;
+    setIsDark(newDark);
+    try {
+      localStorage.setItem("theme", newDark ? "dark" : "light");
+    } catch {
+      /* ignore */
+    }
+    if (newDark) {
+      document.documentElement.classList.remove("light-mode");
+    } else {
+      document.documentElement.classList.add("light-mode");
+    }
+  };
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: refreshKey is a prop used as a cache-bust signal
   useEffect(() => {
@@ -177,6 +205,16 @@ export default function CharacterSelectView({
             <Plus size={14} />
             Add
           </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            data-ocid="select.theme.toggle"
+            onClick={toggleTheme}
+            className="text-muted-foreground hover:text-foreground"
+            title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+          >
+            {isDark ? <Sun size={16} /> : <Moon size={16} />}
+          </Button>
         </div>
       </header>
 
@@ -280,16 +318,19 @@ export default function CharacterSelectView({
                           )}
                         </AnimatePresence>
 
-                        {/* Value badge */}
+                        {/* Power Tier badge */}
                         <div
-                          className="absolute top-1 right-1 text-xs font-bold px-1.5 py-0.5 rounded-sm"
+                          className="absolute top-1 right-1 text-xs font-bold px-1 py-0.5 rounded-sm"
                           style={{
                             background: `${char.bgColor}cc`,
-                            color: char.textColor,
-                            fontSize: "10px",
+                            color:
+                              POWER_TIER_COLORS[char.powerTier] ??
+                              char.textColor,
+                            fontSize: "8px",
+                            border: `1px solid ${POWER_TIER_COLORS[char.powerTier]}44`,
                           }}
                         >
-                          {char.value}
+                          {char.powerTier}
                         </div>
                       </div>
 
